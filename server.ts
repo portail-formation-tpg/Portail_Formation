@@ -807,7 +807,7 @@ app.post('/api/formateurs', requireAuth, requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur de création du formateur dans Supabase :', error);
-    res.status(500).json({ error: 'Impossible d'enregistrer le formateur dans Supabase.' });
+    res.status(500).json({ error: "Impossible d'enregistrer le formateur dans Supabase." });
   }
 });
 
