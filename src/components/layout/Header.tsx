@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, formate
         <div className="flex items-center gap-3.5">
           <div className="h-10 sm:h-12 w-auto flex items-center shrink-0">
             <img
-              src={`${import.meta.env.BASE_URL}assets/aistudio/Logo_tpg_blanc-removebg-preview_c2267cb4.png`}
+              src="/assets/aistudio/Logo_tpg_blanc-removebg-preview_c2267cb4.png"
               alt="Logo officiel TPG"
               className="h-9 sm:h-11 w-auto max-w-[130px] sm:max-w-[150px] object-contain drop-shadow-xs"
             />
@@ -145,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, formate
             }`}
           >
             <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-[10px] font-mono">5</span>
-            <span className="truncate">Avarie Véhicule Service</span>
+            <span className="truncate">Avarie Véhicule de Service</span>
           </button>
 
           <button
@@ -272,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, formate
                     activeTab === 'vehicule' ? 'bg-[#FD5312] text-white shadow' : 'bg-white text-gray-800 border border-gray-200'
                   }`}
                 >
-                  5. Avarie Véhicule de service
+                  5. Avarie Véhicule de Service
                 </button>
                 <button
                   type="button"

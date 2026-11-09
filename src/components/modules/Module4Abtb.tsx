@@ -14,11 +14,9 @@ const AUTOBUS_OPTIONS = [
   'ABA Citaro',
   'AB E-Bus',
   'ABA E-Bus',
-  'ABAA E-Bus',
-  'TOSA'
+  'ABAA E-Bus'
 ];
 const TROLLEYBUS_OPTIONS = [
-  'TOSA',
   'Hess TBA',
   'Hess TBAA',
   'ExquiCity'
@@ -90,20 +88,22 @@ export const Module4Abtb: React.FC<Props> = ({ formateurs, mailConfig }) => {
     setErrorMsg(null);
 
     let recipient = '';
+    const bcc = 'cadres.operationnels@tpg.ch';
+
     if (depot === 'Bachet') {
-      recipient = mailConfig.abtb_bachet;
+      recipient = mailConfig.abtb_bachet || 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch';
     } else if (depot === 'En-Chardon') {
-      recipient = mailConfig.abtb_chardon || 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch,cadres.operationnels@tpg.ch';
+      recipient = mailConfig.abtb_chardon || 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch';
     } else if (depot === 'Jonction') {
       if (selectedTb.length > 0) {
-        recipient = mailConfig.abtb_jonctiontb;
+        recipient = mailConfig.abtb_jonctiontb || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch';
       } else {
-        recipient = mailConfig.abtb_jonctionab;
+        recipient = mailConfig.abtb_jonctionab || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch';
       }
     }
 
     const subject = 'Réservation AB/TB';
-    mailTo(recipient, subject, previewText);
+    mailTo(recipient, subject, previewText, undefined, bcc);
   };
 
   return (
@@ -287,6 +287,26 @@ export const Module4Abtb: React.FC<Props> = ({ formateurs, mailConfig }) => {
         <div className="p-4 bg-white border-2 border-[#FD5312] rounded-xl whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-900 shadow-sm min-h-[160px]">
           {previewText}
         </div>
+        {depot && (
+          <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <div>
+              <span className="font-bold text-gray-700">Destinataire(s) :</span>{' '}
+              <span className="font-mono text-gray-800">
+                {depot === 'Bachet'
+                  ? (mailConfig.abtb_bachet || 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch')
+                  : depot === 'En-Chardon'
+                  ? (mailConfig.abtb_chardon || 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch')
+                  : selectedTb.length > 0
+                  ? (mailConfig.abtb_jonctiontb || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch')
+                  : (mailConfig.abtb_jonctionab || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch')}
+              </span>
+            </div>
+            <div>
+              <span className="font-bold text-gray-700">Cci :</span>{' '}
+              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">cadres.operationnels@tpg.ch</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2.5 mt-4 no-print">

@@ -7,6 +7,7 @@ export interface UserSession {
   role: UserRole;
   formateurId?: string;
   expiresAt: number;
+  mustChangePassword?: boolean;
 }
 
 export interface AuthResponse {

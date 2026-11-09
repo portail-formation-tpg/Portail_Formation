@@ -76,8 +76,9 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
     setErrorMsg(null);
 
     const recipient = depot === 'Bachet' ? mailConfig.tram_bachet : mailConfig.tram_chardon;
+    const bcc = depot === 'Bachet' ? 'cadres.operationnels@tpg.ch' : undefined;
     const subject = 'Réservation Tramway';
-    mailTo(recipient, subject, previewText);
+    mailTo(recipient, subject, previewText, undefined, bcc);
   };
 
   return (
@@ -201,6 +202,20 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
         <div className="p-4 bg-white border-2 border-[#FD5312] rounded-xl whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-900 shadow-sm min-h-[160px]">
           {previewText}
         </div>
+        {depot && (
+          <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <div>
+              <span className="font-bold text-gray-700">Destinataire(s) :</span>{' '}
+              <span className="font-mono text-gray-800">{depot === 'Bachet' ? mailConfig.tram_bachet : mailConfig.tram_chardon}</span>
+            </div>
+            {depot === 'Bachet' && (
+              <div>
+                <span className="font-bold text-gray-700">Cci :</span>{' '}
+                <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">cadres.operationnels@tpg.ch</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2.5 mt-4 no-print">

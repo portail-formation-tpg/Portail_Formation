@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formateur } from '../../types/formateur';
 import { FormateurVehicleLogos } from '../common/VehicleBadges';
-import { X, Mail, Phone, Calendar, ShieldCheck, CheckCircle2, AlertCircle, FileCode } from 'lucide-react';
+import { api } from '../../services/api';
+import { X, Mail, Phone, Calendar, CheckCircle2, AlertCircle, FileCode, KeyRound, Copy, Check, RefreshCw } from 'lucide-react';
 
 interface Props {
   formateur: Formateur;
@@ -11,6 +12,58 @@ interface Props {
 }
 
 export const FormateurDetailModal: React.FC<Props> = ({ formateur, onClose, onEdit, canEdit }) => {
+  const [account, setAccount] = useState<{
+    username: string;
+    mustChangePassword: boolean;
+    defaultTempPassword: string | null;
+  } | null>(null);
+  const [loadingAccount, setLoadingAccount] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const [resettingPass, setResettingPass] = useState(false);
+  const [accountFeedback, setAccountFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (canEdit && formateur.id) {
+      setLoadingAccount(true);
+      api.formateurs.getAccount(formateur.id)
+        .then((acc) => {
+          setAccount({
+            username: acc.username,
+            mustChangePassword: acc.mustChangePassword,
+            defaultTempPassword: acc.defaultTempPassword
+          });
+        })
+        .catch((err) => {
+          console.warn('Impossible de charger le compte formateur:', err);
+        })
+        .finally(() => {
+          setLoadingAccount(false);
+        });
+    }
+  }, [canEdit, formateur.id]);
+
+  const copyInvitation = () => {
+    const portalUrl = typeof window !== 'undefined' ? window.location.origin : 'https://portail-formation.tpg.ch';
+    const pwd = account?.defaultTempPassword || 'TpgFormation2026!';
+    const uname = account?.username || formateur.nomComplet;
+    const text = `Bonjour ${formateur.nomComplet},\n\nVoici tes accès pour le Portail Formation TPG :\n• Lien : ${portalUrl}\n• Identifiant : ${uname} (ou "${formateur.nomComplet}")\n• 1er mot de passe provisoire : ${pwd}\n\n⚠️ Dès ta première connexion, l'application te demandera de créer ton propre mot de passe personnel.`;
+    navigator.clipboard.writeText(text);
+    setCopiedAccount(true);
+    setTimeout(() => setCopiedAccount(false), 2500);
+  };
+
+  const handleResetPassword = async () => {
+    setResettingPass(true);
+    try {
+      const res = await api.formateurs.resetPassword(formateur.id);
+      setAccountFeedback(`Nouveau mot de passe provisoire : ${res.tempPassword}`);
+      setAccount((prev) => prev ? { ...prev, mustChangePassword: true, defaultTempPassword: res.tempPassword } : null);
+    } catch (err: any) {
+      setAccountFeedback(`Erreur : ${err.message || 'Échec de réinitialisation'}`);
+    } finally {
+      setResettingPass(false);
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs p-4 animate-in fade-in">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
@@ -34,6 +87,11 @@ export const FormateurDetailModal: React.FC<Props> = ({ formateur, onClose, onEd
               <span className="text-xs bg-white/20 px-2 py-0.5 rounded font-mono font-bold">
                 ID: {formateur.id}
               </span>
+              {formateur.numeroAgent ? (
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded font-mono font-bold">
+                  N° agent: {formateur.numeroAgent}
+                </span>
+              ) : null}
               {formateur.acronyme ? (
                 <span className="text-xs bg-black/20 px-2 py-0.5 rounded font-mono font-bold">
                   Acronyme: {formateur.acronyme}
@@ -220,6 +278,111 @@ export const FormateurDetailModal: React.FC<Props> = ({ formateur, onClose, onEd
               <p className="text-xs text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
                 {formateur.notes}
               </p>
+            </div>
+          )}
+
+          {/* Section Identifiants & Accès initial (visible par l'Administrateur) */}
+          {canEdit && (
+            <div className="p-4 bg-orange-50/70 border border-orange-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-[#FD5312]" />
+                  <span className="text-xs font-bold uppercase text-gray-800">
+                    Accès & 1er Mot de Passe Formateur
+                  </span>
+                </div>
+                {loadingAccount ? (
+                  <RefreshCw className="w-3.5 h-3.5 text-[#FD5312] animate-spin" />
+                ) : account?.mustChangePassword ? (
+                  <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                    🟡 1ère connexion en attente
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    🟢 Mot de passe personnalisé actif
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <div className="bg-white p-2.5 rounded-lg border border-orange-200">
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">Identifiant</span>
+                  <span className="font-mono font-bold text-gray-900 select-all">
+                    {account?.username || formateur.nomComplet}
+                  </span>
+                  <div className="text-[10px] text-gray-400 mt-0.5">ou son nom complet</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-lg border border-orange-200">
+                  <span className="text-[10px] uppercase font-bold text-gray-500 block">
+                    {account?.mustChangePassword ? '1er Mot de passe provisoire' : 'Statut sécurité'}
+                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[#FD5312] select-all">
+                      {account?.mustChangePassword
+                        ? (account?.defaultTempPassword || 'TpgFormation2026!')
+                        : '••••••••••••'}
+                    </span>
+                    {account?.mustChangePassword && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(account?.defaultTempPassword || 'TpgFormation2026!');
+                          setAccountFeedback('Mot de passe copié !');
+                          setTimeout(() => setAccountFeedback(null), 2500);
+                        }}
+                        className="text-gray-500 hover:text-[#FD5312] p-1 cursor-pointer"
+                        title="Copier le mot de passe provisoire"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">
+                    {account?.mustChangePassword
+                      ? 'Changement forcé dès connexion'
+                      : 'Secret personnel du formateur'}
+                  </div>
+                </div>
+              </div>
+
+              {accountFeedback && (
+                <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs rounded-lg font-bold flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>{accountFeedback}</span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={copyInvitation}
+                  className="px-3 py-1.5 bg-[#FD5312] hover:bg-[#e04508] active:scale-95 text-white rounded-lg text-xs font-black uppercase transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  {copiedAccount ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Accès copiés !</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copier le message d'invitation</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={resettingPass}
+                  onClick={handleResetPassword}
+                  className="px-2.5 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                  title="Réinitialiser un mot de passe provisoire si le formateur a oublié son accès"
+                >
+                  <RefreshCw className={`w-3 h-3 ${resettingPass ? 'animate-spin text-[#FD5312]' : ''}`} />
+                  <span>{resettingPass ? 'Génération...' : 'Régénérer mot de passe provisoire'}</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

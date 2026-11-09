@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
   const { login } = useAuth();
@@ -24,6 +24,11 @@ export const LoginModal: React.FC = () => {
     }
   };
 
+  const handleQuickFill = (u: string, p: string) => {
+    setIdentifier(u);
+    setPassword(p);
+    setError(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4 animate-in fade-in">
@@ -32,7 +37,7 @@ export const LoginModal: React.FC = () => {
         <div className="bg-[#FD5312] p-6 text-white text-center">
           <div className="flex items-center justify-center mb-3">
             <img
-              src={`${import.meta.env.BASE_URL}assets/aistudio/Logo_tpg_blanc-removebg-preview_c2267cb4.png`}
+              src="/assets/aistudio/Logo_tpg_blanc-removebg-preview_c2267cb4.png"
               alt="Logo TPG"
               className="h-11 w-auto object-contain"
             />
@@ -68,7 +73,7 @@ export const LoginModal: React.FC = () => {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Saisissez votre identifiant"
+                  placeholder="Ex: admin ou Christian NOVERRAZ"
                   className="w-full pl-9 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 transition outline-none"
                 />
               </div>
@@ -116,7 +121,34 @@ export const LoginModal: React.FC = () => {
             </button>
           </form>
 
-         
+          {/* Quick test accounts helper */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <p className="text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-2">
+              Comptes de test & validation rapide :
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin', 'AdminTpg2026!')}
+                className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
+              >
+                <div className="font-black text-[#FD5312]">Administrateur</div>
+                <div className="text-[10px] text-gray-500">CRUD complet & audit</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickFill('Christian NOVERRAZ', 'TpgFormation2026!')}
+                className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
+              >
+                <div className="font-black text-gray-800">Formateur Tram</div>
+                <div className="text-[10px] text-gray-500">Ch. NOVERRAZ</div>
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] text-gray-400 text-center">
+              Chiffrement Bcrypt 10 rounds • Sessions chiffrées sécurisées • Protection des routes
+            </p>
+          </div>
         </div>
       </div>
     </div>

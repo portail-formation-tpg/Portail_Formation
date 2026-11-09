@@ -14,12 +14,65 @@ export function fmt(dateStr: string | undefined): string {
   return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
 }
 
-export function mailTo(recipient: string, subject: string, body: string, cc?: string) {
-  let link = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  if (cc) {
-    link = `mailto:${encodeURIComponent(recipient)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+export function mailTo(recipient: string, subject: string, body: string, cc?: string, bcc?: string) {
+  const CADRES_EMAIL = 'cadres.operationnels@tpg.ch';
+
+  const parseList = (str: string | undefined): string[] => {
+    if (!str) return [];
+    return str
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+
+  const recList = parseList(recipient);
+  const ccList = parseList(cc);
+  const bccList = parseList(bcc);
+
+  // Vérifier et extraire systématiquement cadres.operationnels@tpg.ch de To et Cc
+  let cadresFound = false;
+
+  const cleanRecList = recList.filter((email) => {
+    if (email.toLowerCase().includes('cadres.operationnels')) {
+      cadresFound = true;
+      return false;
+    }
+    return true;
+  });
+
+  const cleanCcList = ccList.filter((email) => {
+    if (email.toLowerCase().includes('cadres.operationnels')) {
+      cadresFound = true;
+      return false;
+    }
+    return true;
+  });
+
+  // Si présent ou demandé, s'assurer qu'il est UNIQUEMENT en Cci (bcc)
+  if (cadresFound || bccList.some((e) => e.toLowerCase().includes('cadres.operationnels'))) {
+    if (!bccList.some((e) => e.toLowerCase() === CADRES_EMAIL.toLowerCase())) {
+      bccList.push(CADRES_EMAIL);
+    }
   }
-  window.location.href = link;
+
+  const queryParts: string[] = [];
+  if (cleanCcList.length > 0) {
+    queryParts.push(`cc=${encodeURIComponent(cleanCcList.join(','))}`);
+  }
+  if (bccList.length > 0) {
+    queryParts.push(`bcc=${encodeURIComponent(bccList.join(','))}`);
+  }
+  queryParts.push(`subject=${encodeURIComponent(subject)}`);
+  queryParts.push(`body=${encodeURIComponent(body)}`);
+
+  const primaryRecipient = cleanRecList.join(',');
+  const link = `mailto:${primaryRecipient}?${queryParts.join('&')}`;
+
+  try {
+    window.location.href = link;
+  } catch (err) {
+    console.error('Erreur ouverture client mail :', err);
+  }
 }
 
 export function validerEmail(email: string | undefined): boolean {

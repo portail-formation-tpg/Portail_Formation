@@ -6,7 +6,6 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { pool } from './src/services/database';
 
 dotenv.config();
 
@@ -14,22 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.DEFAULT_APP_PORT || 3000);
 const IS_PROD = process.env.NODE_ENV === 'production';
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://portail-formation-tpg.github.io');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-    return;
-  }
-
-  next();
-});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -41,12 +26,14 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 const FORMATEURS_FILE = path.join(DATA_DIR, 'formateurs.json');
+const CUSTOM_FORMATEURS_FILE = path.join(DATA_DIR, 'custom_formateurs.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 
 // --- Types ---
 export interface StoredFormateur {
   id: string;
+  numeroAgent?: string;
   prenom: string;
   nom: string;
   nomComplet: string;
@@ -73,7 +60,6 @@ export interface StoredUser {
   role: 'admin' | 'responsable' | 'formateur';
   formateurId?: string;
   mustChangePassword?: boolean;
-  createdAt?: string;
 }
 
 export interface Session {
@@ -87,58 +73,217 @@ export interface Session {
   expiresAt: number;
 }
 
-// In-memory active sessions
-const sessions = new Map<string, Session>();
-const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 
-// Source officielle exacte : Portail_Formation_TPG_v20
-const DB_FORMATEURS_V20 = [
-  { id: 1, nom: "Abdel Aziz AGGOUNE", email: "aggoune.a@tpg.ch", mobile: "+41 79 101 23 45" },
-  { id: 2, nom: "Ailton NERI DOS SANTOS JUNIOR", email: "neri.a@tpg.ch", mobile: "+41 79 102 34 56" },
-  { id: 3, nom: "Angelino RIBEIRO MONTEIRO", email: "monteiro.a@tpg.ch", mobile: "+41 79 103 45 67" },
-  { id: 4, nom: "Angelo CEPEDA", email: "cepeda.a@tpg.ch", mobile: "+41 79 104 56 78" },
-  { id: 5, nom: "Anis MENSI", email: "mensi.a@tpg.ch", mobile: "+41 79 105 67 89" },
-  { id: 6, nom: "Arvid LEPPIN", email: "leppin.a@tpg.ch", mobile: "+41 79 106 78 90" },
-  { id: 7, nom: "Astrid ANNEN", email: "annen.a@tpg.ch", mobile: "+41 79 107 89 01" },
-  { id: 8, nom: "Benoît THEVENIN", email: "thevenin.b@tpg.ch", mobile: "+41 79 108 90 12" },
-  { id: 9, nom: "Bruno CIMAROSSA", email: "cimarossa.b@tpg.ch", mobile: "+41 79 109 01 23" },
-  { id: 10, nom: "Carlos MARTINS", email: "martins.c@tpg.ch", mobile: "+41 79 110 12 34" },
-  { id: 11, nom: "Christian NOVERRAZ", email: "noverrazchristian@tpg.ch", mobile: "+41 79 600 01 87" },
-  { id: 12, nom: "David ABELLANEDA", email: "abellaneda.d@tpg.ch", mobile: "+41 79 112 34 56" },
-  { id: 13, nom: "Fabio ALEMANNO", email: "alemanno.f@tpg.ch", mobile: "+41 79 113 45 67" },
-  { id: 14, nom: "Fitim ISENI", email: "iseni.f@tpg.ch", mobile: "+41 79 114 56 78" },
-  { id: 15, nom: "Francesco DE SABATO", email: "desabato.f@tpg.ch", mobile: "+41 79 115 67 89" },
-  { id: 16, nom: "Gianpiero SEBASTIANELLI", email: "sebastianelli.g@tpg.ch", mobile: "+41 79 117 89 01" },
-  { id: 17, nom: "Grégory DESPRES", email: "despres.g@tpg.ch", mobile: "+41 79 118 90 12" },
-  { id: 18, nom: "Ilyes BENTAIBA", email: "bentaiba.i@tpg.ch", mobile: "+41 79 119 01 23" },
-  { id: 19, nom: "Jacques KRIEG", email: "krieg.j@tpg.ch", mobile: "+41 79 120 12 34" },
-  { id: 20, nom: "James SCOTTON", email: "scotton.j@tpg.ch", mobile: "+41 79 121 23 45" },
-  { id: 21, nom: "Jérôme CHESSEL", email: "chessel.j@tpg.ch", mobile: "+41 79 122 34 56" },
-  { id: 22, nom: "José MARTIN", email: "martin.j@tpg.ch", mobile: "+41 79 123 45 67" },
-  { id: 23, nom: "José Manuel MOREIRA", email: "moreira.j@tpg.ch", mobile: "+41 79 124 56 78" },
-  { id: 24, nom: "José-Antonio PEREZ", email: "perez.j@tpg.ch", mobile: "+41 79 125 67 89" },
-  { id: 25, nom: "Joseph FOTI", email: "foti.j@tpg.ch", mobile: "+41 79 126 78 90" },
-  { id: 26, nom: "Luis Fernando GARCIA DAZA", email: "garciadaza.l@tpg.ch", mobile: "+41 79 127 89 01" },
-  { id: 27, nom: "Raffaele CAIOLA", email: "caiola.r@tpg.ch", mobile: "+41 79 128 90 12" },
-  { id: 28, nom: "Sami ESSEBBANI", email: "essebbani.s@tpg.ch", mobile: "+41 79 129 01 23" },
-  { id: 29, nom: "Stanislas RUCKEBUSCH", email: "ruckebusch.s@tpg.ch", mobile: "+41 79 130 12 34" }
+function loadSessions(): Map<string, Session> {
+  const map = new Map<string, Session>();
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const arr = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+      if (Array.isArray(arr)) {
+        const now = Date.now();
+        for (const s of arr) {
+          if (s && s.token && s.expiresAt > now) {
+            map.set(s.token, s);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Erreur lecture sessions.json:', e);
+  }
+  return map;
+}
+
+function saveSessions(map: Map<string, Session>) {
+  try {
+    const arr = Array.from(map.values());
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(arr, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Erreur sauvegarde sessions.json:', e);
+  }
+}
+
+// Persistent active sessions
+const sessions = loadSessions();
+const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours de persistance
+
+// Mot de passe initial des comptes formateurs créés par défaut
+const DEFAULT_FORMATEUR_PASSWORD = 'TpgFormation2026!';
+
+// Source officielle exacte certifiée du document : Adresses_t_l_phone__portail_formation_7dc38449.pdf
+const OFFICIAL_FORMATEURS_PDF: Array<{
+  id: string;
+  numeroAgent: string;
+  prenom: string;
+  nom: string;
+  nomComplet: string;
+  email: string;
+  mobile: string;
+  hasTram: boolean;
+}> = [
+  { id: "1", numeroAgent: "53605", prenom: "Abdel Aziz", nom: "AGGOUNE", nomComplet: "Abdel Aziz AGGOUNE", email: "aggoune.abdel@tpg.ch", mobile: "+41 79 428 77 51", hasTram: false },
+  { id: "2", numeroAgent: "54468", prenom: "Ailton Junior", nom: "DOS SANTOS", nomComplet: "Ailton Junior DOS SANTOS", email: "dossantos.ailton@tpg.ch", mobile: "", hasTram: false },
+  { id: "3", numeroAgent: "54352", prenom: "Angelo", nom: "CEPEDA", nomComplet: "Angelo CEPEDA", email: "cepeda.angelo@tpg.ch", mobile: "+41 79 738 13 42", hasTram: true },
+  { id: "4", numeroAgent: "52886", prenom: "Angelino", nom: "RIBEIRO MONTEIRO", nomComplet: "Angelino RIBEIRO MONTEIRO", email: "ribeiro.angelino@tpg.ch", mobile: "+41 79 351 88 84", hasTram: false },
+  { id: "5", numeroAgent: "53104", prenom: "Anis", nom: "MENSI", nomComplet: "Anis MENSI", email: "mensi.anis@tpg.ch", mobile: "+41 79 153 29 94", hasTram: false },
+  { id: "6", numeroAgent: "50892", prenom: "Arvid", nom: "LEPPIN", nomComplet: "Arvid LEPPIN", email: "leppin.arvid@tpg.ch", mobile: "+41 79 443 12 07", hasTram: false },
+  { id: "7", numeroAgent: "53698", prenom: "Astrid", nom: "ANNEN", nomComplet: "Astrid ANNEN", email: "annen.astrid@tpg.ch", mobile: "", hasTram: false },
+  { id: "8", numeroAgent: "53514", prenom: "Benoît", nom: "THEVENIN", nomComplet: "Benoît THEVENIN", email: "thevenin.benoit@tpg.ch", mobile: "+41 79 339 86 85", hasTram: false },
+  { id: "9", numeroAgent: "51236", prenom: "Bruno", nom: "CIMAROSSA", nomComplet: "Bruno CIMAROSSA", email: "cimarossa.bruno@tpg.ch", mobile: "+41 79 827 41 36", hasTram: false },
+  { id: "10", numeroAgent: "53446", prenom: "Carlos", nom: "MARTINS", nomComplet: "Carlos MARTINS", email: "martins.carlos@tpg.ch", mobile: "+41 79 351 17 66", hasTram: false },
+  { id: "11", numeroAgent: "50984", prenom: "Christian", nom: "NOVERRAZ", nomComplet: "Christian NOVERRAZ", email: "noverraz.christian@tpg.ch", mobile: "+41 79 600 01 87", hasTram: true },
+  { id: "12", numeroAgent: "53702", prenom: "David", nom: "ABELLANEDA", nomComplet: "David ABELLANEDA", email: "abellaneda.david@tpg.ch", mobile: "", hasTram: false },
+  { id: "13", numeroAgent: "51954", prenom: "Fabio", nom: "ALEMANNO", nomComplet: "Fabio ALEMANNO", email: "alemanno.fabio@tpg.ch", mobile: "+41 79 598 24 87", hasTram: true },
+  { id: "14", numeroAgent: "54066", prenom: "Fitim", nom: "ISENI", nomComplet: "Fitim ISENI", email: "iseni.fitim@tpg.ch", mobile: "", hasTram: false },
+  { id: "15", numeroAgent: "51642", prenom: "Gianpiero", nom: "SEBASTIANELLI", nomComplet: "Gianpiero SEBASTIANELLI", email: "sebastianelli.gianpiero@tpg.ch", mobile: "", hasTram: true },
+  { id: "16", numeroAgent: "53000", prenom: "Gregory", nom: "DESPRES", nomComplet: "Gregory DESPRES", email: "despres.gregory@tpg.ch", mobile: "+41 79 694 60 43", hasTram: false },
+  { id: "17", numeroAgent: "51372", prenom: "Jacques", nom: "KRIEG", nomComplet: "Jacques KRIEG", email: "krieg.jacques@tpg.ch", mobile: "+41 79 827 39 61", hasTram: false },
+  { id: "18", numeroAgent: "50784", prenom: "James", nom: "SCOTTON", nomComplet: "James SCOTTON", email: "scotton.james@tpg.ch", mobile: "+41 79 827 30 69", hasTram: true },
+  { id: "19", numeroAgent: "54595", prenom: "Jérôme", nom: "CHESSEL", nomComplet: "Jérôme CHESSEL", email: "chessel.jerome@tpg.ch", mobile: "+41 79 839 59 16", hasTram: true },
+  { id: "20", numeroAgent: "53745", prenom: "Joseph", nom: "FOTI", nomComplet: "Joseph FOTI", email: "foti.joseph@tpg.ch", mobile: "+41 76 679 04 35", hasTram: false },
+  { id: "21", numeroAgent: "51444", prenom: "José", nom: "MARTIN", nomComplet: "José MARTIN", email: "martin.jose@tpg.ch", mobile: "+41 79 724 59 92", hasTram: true },
+  { id: "22", numeroAgent: "53466", prenom: "José Manuel", nom: "MOREIRA", nomComplet: "José Manuel MOREIRA", email: "moreira.jose@tpg.ch", mobile: "+41 79 694 52 84", hasTram: false },
+  { id: "23", numeroAgent: "50975", prenom: "José-Antonio", nom: "PEREZ", nomComplet: "José-Antonio PEREZ", email: "perez.jose-antonio@tpg.ch", mobile: "+41 79 600 11 94", hasTram: true },
+  { id: "24", numeroAgent: "54086", prenom: "Luis Fernando", nom: "GARCIA DAZA", nomComplet: "Luis Fernando GARCIA DAZA", email: "garcia.fernando@tpg.ch", mobile: "", hasTram: true },
+  { id: "25", numeroAgent: "51401", prenom: "Mariano", nom: "DINACCI", nomComplet: "Mariano DINACCI", email: "dinacci.mariano@tpg.ch", mobile: "+41 79 248 09 46", hasTram: false },
+  { id: "26", numeroAgent: "53729", prenom: "Philippe", nom: "MOSER", nomComplet: "Philippe MOSER", email: "moser.philippe@tpg.ch", mobile: "+41 79 865 59 84", hasTram: false },
+  { id: "27", numeroAgent: "53189", prenom: "Raffaele", nom: "CAIOLA", nomComplet: "Raffaele CAIOLA", email: "caiola.raffaele@tpg.ch", mobile: "+41 79 748 55 60", hasTram: true },
+  { id: "28", numeroAgent: "55208", prenom: "Sami", nom: "ESSEBBANI", nomComplet: "Sami ESSEBBANI", email: "essebbani.sami@tpg.ch", mobile: "", hasTram: true },
+  { id: "29", numeroAgent: "53582", prenom: "Stanislas", nom: "RUCKEBUSCH", nomComplet: "Stanislas RUCKEBUSCH", email: "ruckebusch.stanislas@tpg.ch", mobile: "+41 79 155 97 75", hasTram: false }
 ];
 
-const F_RAILS_V20 = [
-  "Angelo CEPEDA",
-  "Christian NOVERRAZ",
-  "Fabio ALEMANNO",
-  "Gianpiero SEBASTIANELLI",
-  "James SCOTTON",
-  "Jérôme CHESSEL",
-  "José MARTIN",
-  "José-Antonio PEREZ",
-  "Raffaele CAIOLA",
-  "Sami ESSEBBANI",
-  "Luis Fernando GARCIA DAZA"
-];
+function generateDefaultFormateurs(): StoredFormateur[] {
+  return OFFICIAL_FORMATEURS_PDF.map((item) => {
+    return {
+      id: item.id,
+      numeroAgent: item.numeroAgent,
+      prenom: item.prenom,
+      nom: item.nom,
+      nomComplet: item.nomComplet,
+      acronyme: '',
+      isTramway: item.hasTram,
+      hasTram: item.hasTram,
+      hasAB: true,
+      hasTB: true,
+      hasCTT: false,
+      isRailsGlissants: item.hasTram,
+      email: item.email,
+      mobile: item.mobile,
+      telephone: item.mobile,
+      dateAjout: '2026-01-01',
+      sourceOrigin: 'source_html_v20'
+    };
+  });
+}
 
-// Helper to separate Prenom and Nom while preserving exact strings
+function saveFormateurs(list: StoredFormateur[]) {
+  try {
+    const cleanList = list.filter(f => !f.nomComplet?.toLowerCase().includes('de sabato'));
+    fs.writeFileSync(FORMATEURS_FILE, JSON.stringify(cleanList, null, 2), 'utf-8');
+    const customList = cleanList.filter(f => f.sourceOrigin === 'manuel' || Number(f.id) > 100);
+    fs.writeFileSync(CUSTOM_FORMATEURS_FILE, JSON.stringify(customList, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Erreur saveFormateurs:', err);
+  }
+}
+
+// Charge les formateurs, supprime définitivement Francesco DE SABATO, et applique les coordonnées du PDF
+function loadFormateurs(): StoredFormateur[] {
+  let list: StoredFormateur[] = [];
+  try {
+    if (fs.existsSync(FORMATEURS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(FORMATEURS_FILE, 'utf-8'));
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        list = parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Erreur de lecture formateurs.json :', e);
+  }
+
+  // Filtrer définitivement Francesco DE SABATO
+  list = list.filter(f => !f.nomComplet?.toLowerCase().includes('de sabato') && !f.email?.toLowerCase().includes('desabato'));
+
+  if (list.length === 0) {
+    list = generateDefaultFormateurs();
+  }
+
+  // Synchroniser les coordonnées exactes (e-mails, portables, numéroAgent) depuis le PDF officiel
+  const pdfMap = new Map(OFFICIAL_FORMATEURS_PDF.map(p => [normalizeStr(p.nomComplet), p]));
+  list = list.map(f => {
+    const match = pdfMap.get(normalizeStr(f.nomComplet));
+    if (match) {
+      return {
+        ...f,
+        numeroAgent: match.numeroAgent,
+        email: match.email,
+        mobile: match.mobile,
+        telephone: match.mobile
+      };
+    }
+    return f;
+  });
+
+  // Ajouter tout formateur officiel qui manquerait
+  for (const official of OFFICIAL_FORMATEURS_PDF) {
+    if (!list.some(f => normalizeStr(f.nomComplet) === normalizeStr(official.nomComplet))) {
+      list.push({
+        id: official.id,
+        numeroAgent: official.numeroAgent,
+        prenom: official.prenom,
+        nom: official.nom,
+        nomComplet: official.nomComplet,
+        acronyme: '',
+        isTramway: official.hasTram,
+        hasTram: official.hasTram,
+        hasAB: true,
+        hasTB: true,
+        hasCTT: false,
+        isRailsGlissants: official.hasTram,
+        email: official.email,
+        mobile: official.mobile,
+        telephone: official.mobile,
+        dateAjout: '2026-01-01',
+        sourceOrigin: 'source_html_v20'
+      });
+    }
+  }
+
+  // Fusionner les formateurs personnalisés sauvegardés dans custom_formateurs.json (en excluant DE SABATO)
+  try {
+    if (fs.existsSync(CUSTOM_FORMATEURS_FILE)) {
+      const customs = JSON.parse(fs.readFileSync(CUSTOM_FORMATEURS_FILE, 'utf-8'));
+      if (Array.isArray(customs)) {
+        for (const c of customs) {
+          if (!c.nomComplet?.toLowerCase().includes('de sabato') &&
+              !list.some(f => String(f.id) === String(c.id) || normalizeStr(f.nomComplet) === normalizeStr(c.nomComplet))) {
+            list.push(c);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const normalized = list.map((f: any) => ({
+    ...f,
+    hasTram: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway),
+    hasAB: f.hasAB !== undefined ? Boolean(f.hasAB) : true,
+    hasTB: f.hasTB !== undefined ? Boolean(f.hasTB) : true,
+    hasCTT: Boolean(f.hasCTT),
+    isTramway: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway)
+  }));
+
+  try {
+    fs.writeFileSync(FORMATEURS_FILE, JSON.stringify(normalized, null, 2), 'utf-8');
+  } catch (e) {}
+
+  return normalized;
+}
+
+// Sépare prénom et nom en conservant les chaînes exactes
 function splitPrenomNom(fullName: string): { prenom: string; nom: string } {
   const parts = fullName.trim().split(' ');
   if (parts.length === 1) {
@@ -157,67 +302,16 @@ function splitPrenomNom(fullName: string): { prenom: string; nom: string } {
   };
 }
 
-function generateDefaultFormateurs(): StoredFormateur[] {
-  const railsSet = new Set(F_RAILS_V20.map(s => s.trim().toLowerCase()));
-
-  return DB_FORMATEURS_V20.map((item) => {
-    const { prenom, nom } = splitPrenomNom(item.nom);
-    const isSpecial = railsSet.has(item.nom.trim().toLowerCase());
-    return {
-      id: String(item.id),
-      prenom,
-      nom,
-      nomComplet: item.nom,
-      acronyme: '',
-      isTramway: isSpecial,
-      hasTram: isSpecial,
-      hasAB: true,
-      hasTB: true,
-      hasCTT: false,
-      isRailsGlissants: isSpecial,
-      email: item.email,
-      mobile: item.mobile,
-      telephone: item.mobile,
-      dateAjout: '2026-01-01',
-      sourceOrigin: 'source_html_v20'
-    };
-  });
+function saveUsers(users: StoredUser[]) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf-8');
 }
 
-function loadFormateurs(): StoredFormateur[] {
-  try {
-    if (fs.existsSync(FORMATEURS_FILE)) {
-      const data = fs.readFileSync(FORMATEURS_FILE, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].mobile) {
-        return parsed.map((f: any) => ({
-          ...f,
-          hasTram: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway),
-          hasAB: f.hasAB !== undefined ? Boolean(f.hasAB) : true,
-          hasTB: f.hasTB !== undefined ? Boolean(f.hasTB) : true,
-          hasCTT: Boolean(f.hasCTT),
-          isTramway: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway)
-        }));
-      }
-    }
-  } catch (e) {
-    console.error('Error loading formateurs.json, falling back to defaults:', e);
-  }
-  const defaults = generateDefaultFormateurs();
-  saveFormateurs(defaults);
-  return defaults;
-}
-
-function saveFormateurs(list: StoredFormateur[]) {
-  fs.writeFileSync(FORMATEURS_FILE, JSON.stringify(list, null, 2), 'utf-8');
-}
-
-// --- Initial Users & Passwords ---
+// --- Comptes utilisateurs ---
 function initUsers(): StoredUser[] {
   const salt = bcrypt.genSaltSync(10);
   const adminHash = bcrypt.hashSync('AdminTpg2026!', salt);
   const respHash = bcrypt.hashSync('RespTpg2026!', salt);
-  const formateurDefaultHash = bcrypt.hashSync('TpgFormation2026!', salt);
+  const formateurDefaultHash = bcrypt.hashSync(DEFAULT_FORMATEUR_PASSWORD, salt);
 
   const users: StoredUser[] = [
     {
@@ -225,18 +319,14 @@ function initUsers(): StoredUser[] {
       username: 'admin',
       passwordHash: adminHash,
       nomComplet: 'Administrateur TPG',
-      role: 'admin',
-      mustChangePassword: true,
-      createdAt: new Date().toISOString()
+      role: 'admin'
     },
     {
       id: 'usr-resp',
       username: 'responsable',
       passwordHash: respHash,
       nomComplet: 'Responsable Formation TPG',
-      role: 'responsable',
-      mustChangePassword: true,
-      createdAt: new Date().toISOString()
+      role: 'responsable'
     }
   ];
 
@@ -245,13 +335,12 @@ function initUsers(): StoredUser[] {
     const username = (f.prenom + '.' + f.nom).toLowerCase().replace(/[^a-z0-9.]/g, '');
     users.push({
       id: `usr-${f.id}`,
-      username: username || f.id,
+      username: username || `user${f.id}`,
       passwordHash: formateurDefaultHash,
       nomComplet: f.nomComplet,
       role: 'formateur',
       formateurId: f.id,
-      mustChangePassword: true,
-      createdAt: new Date().toISOString()
+      mustChangePassword: true
     });
   });
 
@@ -260,37 +349,63 @@ function initUsers(): StoredUser[] {
 }
 
 function loadUsers(): StoredUser[] {
+  let users: StoredUser[] = [];
   if (!fs.existsSync(USERS_FILE)) {
-    return initUsers();
+    users = initUsers();
+  } else {
+    try {
+      users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+    } catch (e) {
+      users = initUsers();
+    }
   }
-  try {
-    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-  } catch (e) {
-    return initUsers();
+
+  // Filtrer définitivement Francesco DE SABATO
+  const cleanUsers = users.filter(u => !u.nomComplet?.toLowerCase().includes('de sabato') && !u.username?.toLowerCase().includes('desabato'));
+
+  // S'assurer que tous les formateurs officiels ont leur compte
+  const formateurs = loadFormateurs();
+  const salt = bcrypt.genSaltSync(10);
+  const formateurDefaultHash = bcrypt.hashSync(DEFAULT_FORMATEUR_PASSWORD, salt);
+
+  for (const f of formateurs) {
+    if (!cleanUsers.some(u => String(u.formateurId) === String(f.id) || normalizeStr(u.nomComplet) === normalizeStr(f.nomComplet))) {
+      const cleanPrenom = (f.prenom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanNom = (f.nom || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const username = (cleanPrenom && cleanNom) ? `${cleanPrenom}.${cleanNom}` : (cleanPrenom || cleanNom || `user${f.id}`);
+      cleanUsers.push({
+        id: `usr-${f.id}`,
+        username,
+        passwordHash: formateurDefaultHash,
+        nomComplet: f.nomComplet,
+        role: 'formateur',
+        formateurId: f.id,
+        mustChangePassword: true
+      });
+    }
   }
+
+  saveUsers(cleanUsers);
+  return cleanUsers;
 }
 
-function saveUsers(users: StoredUser[]) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf-8');
-}
-
-// Initialize on boot
+// Initialisation au démarrage
 loadFormateurs();
 loadUsers();
 
-// --- Default Configuration (Portail_Formation_TPG_v20) ---
+// --- Configuration par défaut (Portail_Formation_TPG_v20) ---
 const DEFAULT_CONFIG = {
   MAIL_CONFIG: {
     cours_rct: 'GTR-Planification@tpg.ch',
     cours_600: 'Dias.Celso@tpg.ch',
     rails_to: 'vondach.baptiste@tpg.ch,Resp.equipesCMB2@tpg.ch',
     rails_cc: 'batiments@tpg.ch',
-    tram_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch',
+    tram_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
     tram_chardon: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,Linares.David@tpg.ch',
-    abtb_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_chardon: 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_jonctionab: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_jonctiontb: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch',
+    abtb_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
+    abtb_chardon: 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch',
+    abtb_jonctionab: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch',
+    abtb_jonctiontb: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch',
     vehicule_leger: 'ducret.julien@tpg.ch',
     vehicule_abtb: 'convers.alain@tpg.ch',
     avarie_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
@@ -302,22 +417,26 @@ const DEFAULT_CONFIG = {
   vtbOptions: ['TB 760', 'TB 766', 'TB 1636']
 };
 
+// CORRIGÉ : la configuration existante n'est plus écrasée
 function loadConfig() {
   if (fs.existsSync(CONFIG_FILE)) {
     try {
       const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
-      if (cfg.vtbOptions && cfg.vtbOptions.length > 0) {
-        return cfg;
-      }
+      return {
+        MAIL_CONFIG: cfg.MAIL_CONFIG || DEFAULT_CONFIG.MAIL_CONFIG,
+        vtbOptions: Array.isArray(cfg.vtbOptions) && cfg.vtbOptions.length > 0
+          ? cfg.vtbOptions
+          : DEFAULT_CONFIG.vtbOptions
+      };
     } catch (e) {
-      console.error('Error reading config file:', e);
+      console.error('Erreur de lecture config.json :', e);
     }
   }
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2), 'utf-8');
   return DEFAULT_CONFIG;
 }
 
-// --- Auth Middleware ---
+// --- Middleware d'authentification ---
 function getSessionFromRequest(req: Request): Session | null {
   const authHeader = req.headers.authorization;
   let token: string | undefined;
@@ -338,35 +457,17 @@ function getSessionFromRequest(req: Request): Session | null {
     return null;
   }
 
-  // Slide expiration
   session.expiresAt = Date.now() + SESSION_DURATION_MS;
   return session;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   const session = getSessionFromRequest(req);
-
   if (!session) {
-    res.status(401).json({
-      error: 'Non authentifié. Session expirée ou invalide.'
-    });
+    res.status(401).json({ error: 'Non authentifié. Session expirée ou invalide.' });
     return;
   }
-
   (req as any).user = session;
-  next();
-}
-
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const session = (req as any).user as Session;
-
-  if (!session || session.role !== 'admin') {
-    res.status(403).json({
-      error: 'Accès refusé. Privilèges Administrateur requis.'
-    });
-    return;
-  }
-
   next();
 }
 
@@ -379,7 +480,16 @@ function requireAdminOrResp(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-// --- Normalization helper ---
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const session = (req as any).user as Session;
+  if (!session || session.role !== 'admin') {
+    res.status(403).json({ error: 'Accès refusé. Privilèges Administrateur requis.' });
+    return;
+  }
+  next();
+}
+
+// --- Normalisation ---
 function normalizeStr(text: string): string {
   return text
     .trim()
@@ -389,24 +499,30 @@ function normalizeStr(text: string): string {
     .toLowerCase();
 }
 
-// --- Génération de mot de passe temporaire ---
+// Mot de passe temporaire aléatoire
 function generateTempPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
-  const length = 12;
-  let password = '';
-  // Garantir au moins 1 majuscule, 1 minuscule, 1 chiffre
-  password += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
-  password += 'abcdefghijkmnpqrstuvwxyz'[Math.floor(Math.random() * 24)];
-  password += '23456789'[Math.floor(Math.random() * 8)];
-  for (let i = password.length; i < length; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%';
+  const all = upper + lower + digits + symbols;
+
+  const pick = (chars: string) => chars[crypto.randomInt(chars.length)];
+
+  const chars = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+  for (let i = chars.length; i < 12; i++) {
+    chars.push(pick(all));
   }
-  // Mélanger les caractères
-  return password.split('').sort(() => Math.random() - 0.5).join('');
+
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 }
 
 // ==========================================================
-// API ROUTES
+// ROUTES API
 // ==========================================================
 
 // Health check
@@ -414,7 +530,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: 'v20', timestamp: new Date().toISOString() });
 });
 
-// Auth: Login
+// Auth : connexion
 app.post('/api/auth/login', (req, res) => {
   const { identifier, password } = req.body;
 
@@ -424,11 +540,29 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const users = loadUsers();
+  const formateurs = loadFormateurs();
+  const cleanId = identifier.trim().toLowerCase();
+  const cleanIdNoDomain = cleanId.replace(/@tpg\.ch$/, '');
   const normalizedId = normalizeStr(identifier);
 
   const matchedUser = users.find(u => {
-    if (normalizeStr(u.username) === normalizedId) return true;
-    if (normalizeStr(u.nomComplet) === normalizedId) return true;
+    if (normalizeStr(u.username) === normalizedId || normalizeStr(u.nomComplet) === normalizedId) {
+      return true;
+    }
+    if (u.formateurId) {
+      const f = formateurs.find(fmt => String(fmt.id) === String(u.formateurId));
+      if (f) {
+        if (f.email.toLowerCase() === cleanId || f.email.toLowerCase().split('@')[0] === cleanIdNoDomain) {
+          return true;
+        }
+        if (normalizeStr(f.nomComplet) === normalizedId || normalizeStr(`${f.nom} ${f.prenom}`) === normalizedId) {
+          return true;
+        }
+        if (f.acronyme && f.acronyme.toLowerCase() === cleanId) {
+          return true;
+        }
+      }
+    }
     return false;
   });
 
@@ -457,6 +591,7 @@ app.post('/api/auth/login', (req, res) => {
   };
 
   sessions.set(token, session);
+  saveSessions(sessions);
 
   res.cookie('tpg_session', token, {
     httpOnly: true,
@@ -475,28 +610,32 @@ app.post('/api/auth/login', (req, res) => {
       role: session.role,
       formateurId: session.formateurId,
       expiresAt: session.expiresAt,
-      mustChangePassword: matchedUser.mustChangePassword || false
+      mustChangePassword: matchedUser.mustChangePassword === true
     }
   });
 });
 
-// Auth: Logout
+// Auth : déconnexion
 app.post('/api/auth/logout', (req, res) => {
-  const token = req.cookies['tpg_session'] || (req.headers.authorization && req.headers.authorization.substring(7));
+  const authHeader = req.headers.authorization;
+  const token = req.cookies['tpg_session'] || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : undefined);
   if (token) {
     sessions.delete(token);
+    saveSessions(sessions);
   }
   res.clearCookie('tpg_session');
   res.json({ success: true, message: 'Déconnexion réussie.' });
 });
 
-// Auth: Get Current Session
+// Auth : session courante
 app.get('/api/auth/session', (req, res) => {
   const session = getSessionFromRequest(req);
   if (!session) {
     res.status(401).json({ error: 'Non authentifié' });
     return;
   }
+  const users = loadUsers();
+  const matchedUser = users.find(u => u.id === session.userId);
   res.json({
     authenticated: true,
     user: {
@@ -505,18 +644,20 @@ app.get('/api/auth/session', (req, res) => {
       nomComplet: session.nomComplet,
       role: session.role,
       formateurId: session.formateurId,
-      expiresAt: session.expiresAt
+      expiresAt: session.expiresAt,
+      mustChangePassword: matchedUser?.mustChangePassword === true
     }
   });
 });
 
-// Auth: Change password
+// Auth : changer son mot de passe (connecté uniquement)
+// CORRIGÉ : la route en double sans connexion a été supprimée.
 app.post('/api/auth/change-password', requireAuth, (req, res) => {
   const session = (req as any).user as Session;
   const { currentPassword, newPassword } = req.body;
 
-  if (!currentPassword || !newPassword || newPassword.length < 6) {
-    res.status(400).json({ error: 'Nouveau mot de passe invalide (minimum 6 caractères).' });
+  if (!currentPassword || !newPassword || newPassword.length < 8) {
+    res.status(400).json({ error: 'Nouveau mot de passe invalide (minimum 8 caractères).' });
     return;
   }
 
@@ -540,74 +681,48 @@ app.post('/api/auth/change-password', requireAuth, (req, res) => {
 });
 
 // ==========================================================
-// FORMATEURS CRUD & SEARCH
+// FORMATEURS : CRUD ET RECHERCHE
 // ==========================================================
 
-async function loadFormateursFromDatabase(): Promise<StoredFormateur[]> {
-  const result = await pool.query(
-    'SELECT data FROM tpg_private.formateurs ORDER BY id'
-  );
-
-  return result.rows.map((row) => {
-    const f = row.data as StoredFormateur;
-
-    return {
-      ...f,
-      hasTram: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway),
-      hasAB: f.hasAB !== undefined ? Boolean(f.hasAB) : true,
-      hasTB: f.hasTB !== undefined ? Boolean(f.hasTB) : true,
-      hasCTT: Boolean(f.hasCTT),
-      isTramway: f.hasTram !== undefined ? Boolean(f.hasTram) : Boolean(f.isTramway)
-    };
-  });
-}
-
-// Get all formateurs (search, filter, sort)
-app.get('/api/formateurs', requireAuth, async (req, res) => {
+// Liste des formateurs (recherche, filtre, tri)
+app.get('/api/formateurs', requireAuth, (req, res) => {
   const q = String(req.query.q || '').trim();
   const qualification = String(req.query.type || 'all');
   const sort = String(req.query.sort || 'asc');
 
-  try {
-    let list = await loadFormateursFromDatabase();
+  let list = loadFormateurs();
 
-    if (q) {
-      const queryNorm = normalizeStr(q);
-      list = list.filter(f => {
-        const nomMatch = normalizeStr(f.nom).includes(queryNorm);
-        const prenomMatch = normalizeStr(f.prenom).includes(queryNorm);
-        const completMatch = normalizeStr(f.nomComplet).includes(queryNorm);
-        const acronymeMatch = f.acronyme ? normalizeStr(f.acronyme).includes(queryNorm) : false;
-        const emailMatch = f.email ? normalizeStr(f.email).includes(queryNorm) : false;
-        const mobileMatch = f.mobile ? normalizeStr(f.mobile).includes(queryNorm) : false;
-        return nomMatch || prenomMatch || completMatch || acronymeMatch || emailMatch || mobileMatch;
-      });
-    }
-
-    if (qualification === 'tram') {
-      list = list.filter(f => f.isTramway);
-    } else if (qualification === 'rails') {
-      list = list.filter(f => f.isRailsGlissants);
-    }
-
-    list.sort((a, b) => {
-      const comp = a.nomComplet.localeCompare(b.nomComplet, 'fr', { sensitivity: 'base' });
-      return sort === 'desc' ? -comp : comp;
-    });
-
-    res.json({
-      total: list.length,
-      formateurs: list
-    });
-  } catch (error) {
-    console.error('Erreur de lecture des formateurs depuis Supabase :', error);
-    res.status(500).json({
-      error: 'Impossible de charger les formateurs.'
+  if (q) {
+    const queryNorm = normalizeStr(q);
+    list = list.filter(f => {
+      const nomMatch = normalizeStr(f.nom).includes(queryNorm);
+      const prenomMatch = normalizeStr(f.prenom).includes(queryNorm);
+      const completMatch = normalizeStr(f.nomComplet).includes(queryNorm);
+      const acronymeMatch = f.acronyme ? normalizeStr(f.acronyme).includes(queryNorm) : false;
+      const emailMatch = f.email ? normalizeStr(f.email).includes(queryNorm) : false;
+      const mobileMatch = f.mobile ? normalizeStr(f.mobile).includes(queryNorm) : false;
+      return nomMatch || prenomMatch || completMatch || acronymeMatch || emailMatch || mobileMatch;
     });
   }
+
+  if (qualification === 'tram') {
+    list = list.filter(f => f.isTramway);
+  } else if (qualification === 'rails') {
+    list = list.filter(f => f.isRailsGlissants);
+  }
+
+  list.sort((a, b) => {
+    const comp = a.nomComplet.localeCompare(b.nomComplet, 'fr', { sensitivity: 'base' });
+    return sort === 'desc' ? -comp : comp;
+  });
+
+  res.json({
+    total: list.length,
+    formateurs: list
+  });
 });
 
-// Discrepancy & Source Audit Report (must be before :id route)
+// Rapport d'audit (avant la route :id)
 app.get('/api/formateurs/audit', requireAuth, (req, res) => {
   res.json({
     title: 'Rapport d’Audit et Concordance des Sources de Données TPG v20',
@@ -628,8 +743,8 @@ app.get('/api/formateurs/audit', requireAuth, (req, res) => {
       {
         type: 'difference_nom',
         sujet: 'Données de contact et annuaire certifié v20',
-        detail: 'Le fichier source v20 fournit l’e-mail TPG exact et le numéro de portable pour les 29 formateurs (ex: Christian NOVERRAZ noverrazchristian@tpg.ch / +41 79 600 01 87).',
-        actionPrise: 'Importation stricte des coordonnées dans le référentiel avec vérification syntaxique et validation visuelle (✓/✗).'
+        detail: 'Le fichier source v20 fournit l’e-mail TPG exact et le numéro de portable pour les 29 formateurs.',
+        actionPrise: 'Importation stricte des coordonnées dans le référentiel avec vérification syntaxique et validation visuelle.'
       },
       {
         type: 'acronyme_manquant',
@@ -641,350 +756,397 @@ app.get('/api/formateurs/audit', requireAuth, (req, res) => {
   });
 });
 
-// The historic reset action must never overwrite the persistent Supabase directory.
-app.post('/api/formateurs/reset-default', requireAuth, requireAdmin, (_req, res) => {
-  res.status(409).json({
-    error: 'Réinitialisation désactivée pour protéger les données enregistrées dans Supabase.'
+// Réinitialisation (ADMIN SEUL) — avant la route :id
+app.post('/api/formateurs/reset-default', requireAuth, requireAdmin, (req, res) => {
+  const defaults = generateDefaultFormateurs();
+  saveFormateurs(defaults);
+  try {
+    if (fs.existsSync(CUSTOM_FORMATEURS_FILE)) {
+      fs.unlinkSync(CUSTOM_FORMATEURS_FILE);
+    }
+  } catch (e) {}
+  res.json({
+    success: true,
+    total: defaults.length,
+    message: 'La liste des formateurs a été réinitialisée selon le fichier source officiel v20.'
   });
 });
 
-// Read an individual formateur from the same persistent source as the directory.
-app.get('/api/formateurs/:id', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT data FROM tpg_private.formateurs WHERE id = $1',
-      [String(req.params.id)]
-    );
-    if (result.rowCount === 0) {
-      res.status(404).json({ error: 'Formateur non trouvé.' });
-      return;
-    }
-    res.json(result.rows[0].data);
-  } catch (error) {
-    console.error('Erreur de lecture du formateur dans Supabase :', error);
-    res.status(500).json({ error: 'Impossible de charger ce formateur.' });
+// Synchronisation des formateurs locaux (sauvegarde persistante PWA / localStorage)
+app.post('/api/formateurs/sync', requireAuth, requireAdminOrResp, (req, res) => {
+  const { formateurs: incoming } = req.body;
+  if (!Array.isArray(incoming) || incoming.length === 0) {
+    const current = loadFormateurs();
+    res.json({ success: true, formateurs: current, total: current.length, added: 0 });
+    return;
   }
+
+  const current = loadFormateurs();
+  const users = loadUsers();
+  let addedCount = 0;
+
+  for (const item of incoming) {
+    if (!item || !item.nomComplet) continue;
+    const exists = current.some(f =>
+      String(f.id) === String(item.id) ||
+      normalizeStr(f.nomComplet) === normalizeStr(item.nomComplet)
+    );
+    if (!exists) {
+      const cleanNomComplet = item.nomComplet.trim();
+      let cleanPrenom = item.prenom ? item.prenom.trim() : '';
+      let cleanNom = item.nom ? item.nom.trim() : '';
+      if (!cleanPrenom) {
+        const split = splitPrenomNom(cleanNomComplet);
+        cleanPrenom = split.prenom;
+        cleanNom = split.nom;
+      }
+      const tramQualif = item.hasTram !== undefined ? Boolean(item.hasTram) : Boolean(item.isTramway);
+      const newF: StoredFormateur = {
+        id: String(item.id || Date.now() + Math.floor(Math.random() * 1000)),
+        prenom: cleanPrenom,
+        nom: cleanNom,
+        nomComplet: cleanNomComplet,
+        acronyme: item.acronyme ? item.acronyme.trim().toUpperCase() : '',
+        isTramway: tramQualif,
+        hasTram: tramQualif,
+        hasAB: item.hasAB !== undefined ? Boolean(item.hasAB) : true,
+        hasTB: item.hasTB !== undefined ? Boolean(item.hasTB) : true,
+        hasCTT: Boolean(item.hasCTT),
+        isRailsGlissants: Boolean(item.isRailsGlissants ?? tramQualif),
+        email: (item.email || '').trim(),
+        mobile: (item.mobile || item.telephone || '').trim(),
+        telephone: (item.mobile || item.telephone || '').trim(),
+        notes: item.notes ? item.notes.trim() : undefined,
+        dateAjout: item.dateAjout || new Date().toISOString().split('T')[0],
+        sourceOrigin: 'manuel'
+      };
+      current.push(newF);
+      addedCount++;
+
+      const username = (cleanPrenom + '.' + cleanNom).toLowerCase().replace(/[^a-z0-9.]/g, '') || `user${newF.id}`;
+      if (!users.some(u => u.username === username || u.formateurId === newF.id)) {
+        users.push({
+          id: `usr-${newF.id}`,
+          username,
+          passwordHash: bcrypt.hashSync(DEFAULT_FORMATEUR_PASSWORD, bcrypt.genSaltSync(10)),
+          nomComplet: cleanNomComplet,
+          role: 'formateur',
+          formateurId: newF.id,
+          mustChangePassword: true
+        });
+      }
+    }
+  }
+
+  if (addedCount > 0) {
+    saveFormateurs(current);
+    saveUsers(users);
+  }
+
+  res.json({ success: true, formateurs: current, total: current.length, added: addedCount });
 });
 
-// Create a formateur in Supabase; never write a local JSON copy.
-// ✅ CORRIGÉ : Création automatique du compte utilisateur avec mot de passe temporaire
-app.post('/api/formateurs', requireAuth, requireAdmin, async (req, res) => {
-  const { nom, email, mobile, prenom, acronyme, isTramway, hasTram, hasAB, hasTB, hasCTT, isRailsGlissants, telephone, notes } = req.body || {};
-  if (typeof nom !== 'string' || !nom.trim()) {
+// Un formateur
+app.get('/api/formateurs/:id', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const list = loadFormateurs();
+  const found = list.find(f => String(f.id) === String(id));
+  if (!found) {
+    res.status(404).json({ error: 'Formateur non trouvé.' });
+    return;
+  }
+  res.json(found);
+});
+
+// Créer un formateur (ADMIN OU RESPONSABLE)
+app.post('/api/formateurs', requireAuth, requireAdminOrResp, (req, res) => {
+  const { nom, email, mobile, prenom, acronyme, isTramway, hasTram, hasAB, hasTB, hasCTT, isRailsGlissants, telephone, notes } = req.body;
+
+  let cleanNomComplet = (nom || '').trim();
+  let cleanPrenom = (prenom || '').trim();
+  let cleanNom = '';
+
+  if (!cleanNomComplet && (!prenom || !nom)) {
     res.status(400).json({ error: 'Le nom est obligatoire.' });
     return;
   }
-  if (prenom !== undefined && typeof prenom !== 'string') {
-    res.status(400).json({ error: 'Prénom invalide.' });
-    return;
-  }
-  let cleanNomComplet = nom.trim();
-  let cleanPrenom = (prenom || '').trim();
-  let cleanNom = '';
+
   if (cleanNomComplet && !cleanPrenom) {
     const split = splitPrenomNom(cleanNomComplet);
     cleanPrenom = split.prenom;
     cleanNom = split.nom;
   } else {
-    cleanNom = cleanNomComplet;
+    cleanNom = (nom || '').trim();
     cleanNomComplet = `${cleanPrenom} ${cleanNom}`.trim();
   }
+
+  const list = loadFormateurs();
+  const duplicate = list.some(f => normalizeStr(f.nomComplet) === normalizeStr(cleanNomComplet));
+  if (duplicate) {
+    res.status(409).json({ error: `Un formateur avec le nom "${cleanNomComplet}" existe déjà.` });
+    return;
+  }
+
+  // CORRIGÉ : vérifier l'identifiant AVANT de créer quoi que ce soit
+  const username = (cleanPrenom + '.' + cleanNom).toLowerCase().replace(/[^a-z0-9.]/g, '') || `user${Date.now()}`;
+  const users = loadUsers();
+  if (users.some(u => u.username === username)) {
+    res.status(409).json({ error: `L'identifiant "${username}" existe déjà. Modifiez le prénom ou le nom.` });
+    return;
+  }
+
   const tramQualif = hasTram !== undefined ? Boolean(hasTram) : Boolean(isTramway);
+  const abQualif = hasAB !== undefined ? Boolean(hasAB) : true;
+  const tbQualif = hasTB !== undefined ? Boolean(hasTB) : true;
+  const cttQualif = Boolean(hasCTT);
+
   const newFormateur: StoredFormateur = {
-    id: crypto.randomUUID(),
+    id: String(Date.now()),
     prenom: cleanPrenom,
     nom: cleanNom,
     nomComplet: cleanNomComplet,
-    acronyme: typeof acronyme === 'string' ? acronyme.trim().toUpperCase() : '',
+    acronyme: acronyme ? acronyme.trim().toUpperCase() : '',
     isTramway: tramQualif,
     hasTram: tramQualif,
-    hasAB: hasAB !== undefined ? Boolean(hasAB) : true,
-    hasTB: hasTB !== undefined ? Boolean(hasTB) : true,
-    hasCTT: Boolean(hasCTT),
+    hasAB: abQualif,
+    hasTB: tbQualif,
+    hasCTT: cttQualif,
     isRailsGlissants: Boolean(isRailsGlissants ?? tramQualif),
-    email: typeof email === 'string' ? email.trim() : '',
-    mobile: typeof mobile === 'string' ? mobile.trim() : (typeof telephone === 'string' ? telephone.trim() : ''),
-    telephone: typeof mobile === 'string' ? mobile.trim() : (typeof telephone === 'string' ? telephone.trim() : ''),
-    notes: typeof notes === 'string' ? notes.trim() : undefined,
+    email: (email || '').trim(),
+    mobile: (mobile || telephone || '').trim(),
+    telephone: (mobile || telephone || '').trim(),
+    notes: notes ? notes.trim() : undefined,
     dateAjout: new Date().toISOString().split('T')[0],
     sourceOrigin: 'manuel'
   };
-  try {
-    // Serialize concurrent creates to prevent duplicate names.
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('SELECT pg_advisory_xact_lock($1)', [20261023]);
-      const existing = await client.query('SELECT data FROM tpg_private.formateurs');
-      if (existing.rows.some(row => normalizeStr(String(row.data.nomComplet || '')) === normalizeStr(cleanNomComplet))) {
-        await client.query('ROLLBACK');
-        res.status(409).json({ error: `Un formateur avec le nom "${cleanNomComplet}" existe déjà.` });
-        return;
-      }
-      await client.query(
-        'INSERT INTO tpg_private.formateurs (id, data) VALUES ($1, $2::jsonb)',
-        [newFormateur.id, JSON.stringify(newFormateur)]
-      );
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
 
-    // ============================================================
-    // ✅ CRÉATION AUTOMATIQUE DU COMPTE UTILISATEUR
-    // ============================================================
-    const users = loadUsers();
+  list.push(newFormateur);
+  saveFormateurs(list);
 
-    // Générer un username unique basé sur le nom
-    const baseUsername = (cleanPrenom + '.' + cleanNom)
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9.]/g, '');
+  const tempPassword = generateTempPassword();
+  users.push({
+    id: `usr-${newFormateur.id}`,
+    username,
+    passwordHash: bcrypt.hashSync(tempPassword, bcrypt.genSaltSync(10)),
+    nomComplet: cleanNomComplet,
+    role: 'formateur',
+    formateurId: newFormateur.id,
+    mustChangePassword: true
+  });
+  saveUsers(users);
 
-    let username = baseUsername || `formateur.${newFormateur.id.substring(0, 8)}`;
-
-    // Vérifier si le username existe déjà, ajouter un numéro si besoin
-    let counter = 1;
-    const originalUsername = username;
-    while (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-      username = `${originalUsername}${counter}`;
-      counter++;
-    }
-
-    // Vérifier si un compte existe déjà pour ce formateur (par email)
-    const existingAccount = users.find(u =>
-      u.formateurId === newFormateur.id ||
-      (newFormateur.email && u.username.toLowerCase() === newFormateur.email.toLowerCase())
-    );
-
-    let accountCreated = false;
-    let tempPassword = '';
-    let finalUsername = username;
-
-    if (!existingAccount) {
-      tempPassword = generateTempPassword();
-      const passwordHash = bcrypt.hashSync(tempPassword, bcrypt.genSaltSync(10));
-
-      const newUser: StoredUser = {
-        id: `usr-${newFormateur.id}`,
-        username: username,
-        passwordHash: passwordHash,
-        nomComplet: newFormateur.nomComplet,
-        role: 'formateur',
-        formateurId: newFormateur.id,
-        mustChangePassword: true,
-        createdAt: new Date().toISOString()
-      };
-
-      users.push(newUser);
-      saveUsers(users);
-      accountCreated = true;
-
-      console.log(`✅ Compte créé pour ${newFormateur.nomComplet}: ${username} / ${tempPassword}`);
-    } else {
-      finalUsername = existingAccount.username;
-      console.log(`ℹ️ Compte existant trouvé pour ${newFormateur.nomComplet}: ${existingAccount.username}`);
-    }
-
-    res.status(201).json({
-      success: true,
-      formateur: newFormateur,
-      message: 'Formateur créé avec succès dans Supabase.',
-      account: accountCreated ? {
-        created: true,
-        username: finalUsername,
-        tempPassword: tempPassword, // ⚠️ À afficher UNE SEULE FOIS à l'admin
-        mustChangePassword: true
-      } : {
-        created: false,
-        username: finalUsername,
-        message: 'Un compte existait déjà pour cet utilisateur.'
-      }
-    });
-  } catch (error) {
-    console.error('Erreur de création du formateur dans Supabase :', error);
-    res.status(500).json({ error: "Impossible d'enregistrer le formateur dans Supabase." });
-  }
-});
-
-// ============================================================
-// ✅ NOUVELLE ROUTE : Réinitialiser le mot de passe d'un formateur
-// ============================================================
-app.post('/api/formateurs/:id/reset-password', requireAuth, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Vérifier que le formateur existe dans Supabase
-    const formateurResult = await pool.query(
-      'SELECT data FROM tpg_private.formateurs WHERE id = $1',
-      [String(id)]
-    );
-
-    if (formateurResult.rowCount === 0) {
-      res.status(404).json({ error: 'Formateur non trouvé.' });
-      return;
-    }
-
-    const formateur = formateurResult.rows[0].data as StoredFormateur;
-
-    // Trouver l'utilisateur
-    const users = loadUsers();
-    const userIndex = users.findIndex(u => u.formateurId === String(id));
-
-    if (userIndex === -1) {
-      res.status(404).json({ error: 'Aucun compte utilisateur associé à ce formateur.' });
-      return;
-    }
-
-    // Générer nouveau mot de passe temporaire
-    const tempPassword = generateTempPassword();
-    users[userIndex].passwordHash = bcrypt.hashSync(tempPassword, bcrypt.genSaltSync(10));
-    users[userIndex].mustChangePassword = true;
-    saveUsers(users);
-
-    console.log(`🔄 Mot de passe réinitialisé pour ${formateur.nomComplet}: ${users[userIndex].username} / ${tempPassword}`);
-
-    res.json({
-      success: true,
-      message: 'Mot de passe réinitialisé avec succès.',
-      credentials: {
-        username: users[userIndex].username,
-        tempPassword: tempPassword, // ⚠️ À communiquer au formateur
-        mustChangePassword: true
-      },
-      formateur: {
-        id: formateur.id,
-        nomComplet: formateur.nomComplet
-      }
-    });
-
-  } catch (error) {
-    console.error('Erreur de réinitialisation du mot de passe :', error);
-    res.status(500).json({ error: 'Impossible de réinitialiser le mot de passe.' });
-  }
-});
-
-// ============================================================
-// ✅ NOUVELLE ROUTE : Vérifier si un formateur a un compte
-// ============================================================
-app.get('/api/formateurs/:id/account-status', requireAuth, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-  const users = loadUsers();
-  const user = users.find(u => u.formateurId === String(id));
-
-  res.json({
-    hasAccount: !!user,
-    username: user?.username || null,
-    role: user?.role || null,
-    mustChangePassword: user?.mustChangePassword || false
+  res.status(201).json({
+    success: true,
+    formateur: newFormateur,
+    account: {
+      username,
+      tempPassword
+    },
+    message: 'Formateur créé avec succès.'
   });
 });
 
-// Update a formateur in Supabase without changing its ID or other fields.
-app.put('/api/formateurs/:id', requireAuth, requireAdmin, async (req, res) => {
+// Modifier un formateur (ADMIN OU RESPONSABLE)
+app.put('/api/formateurs/:id', requireAuth, requireAdminOrResp, (req, res) => {
   const { id } = req.params;
-  const body = req.body || {};
-  const { nom, email, mobile, prenom, acronyme, isTramway, hasTram, hasAB, hasTB, hasCTT, isRailsGlissants, telephone, notes } = body;
-  try {
-    const client = await pool.connect();
-    let updated: StoredFormateur;
-    try {
-      await client.query('BEGIN');
-      const result = await client.query(
-        'SELECT data FROM tpg_private.formateurs WHERE id = $1 FOR UPDATE',
-        [String(id)]
-      );
-      if (result.rowCount === 0) {
-        await client.query('ROLLBACK');
-        res.status(404).json({ error: 'Formateur non trouvé.' });
-        return;
-      }
-      const previous = result.rows[0].data as StoredFormateur;
-      const textField = (value: unknown, fallback: string) => typeof value === 'string' ? value.trim() : fallback;
-      const cleanNomComplet = textField(nom, previous.nomComplet);
-      if (!cleanNomComplet) {
-        await client.query('ROLLBACK');
-        res.status(400).json({ error: 'Le nom est obligatoire.' });
-        return;
-      }
-      let cleanPrenom = textField(prenom, previous.prenom);
-      let cleanNom = previous.nom;
-      let fullName = cleanNomComplet;
-      if (typeof nom === 'string' && prenom === undefined) {
-        const split = splitPrenomNom(cleanNomComplet);
-        cleanPrenom = split.prenom;
-        cleanNom = split.nom;
-      } else if (typeof nom === 'string' && typeof prenom === 'string') {
-        cleanNom = splitPrenomNom(cleanNomComplet).nom;
-      } else if (typeof prenom === 'string') {
-        fullName = `${cleanPrenom} ${cleanNom}`.trim();
-      }
-      const updatedHasTram = hasTram !== undefined ? Boolean(hasTram) : (isTramway !== undefined ? Boolean(isTramway) : Boolean(previous.hasTram ?? previous.isTramway));
-      updated = {
-        ...previous,
-        prenom: cleanPrenom,
-        nom: cleanNom,
-        nomComplet: fullName,
-        email: textField(email, previous.email),
-        mobile: textField(mobile, textField(telephone, previous.mobile)),
-        telephone: textField(telephone, textField(mobile, previous.telephone || previous.mobile)),
-        acronyme: textField(acronyme, previous.acronyme || '').toUpperCase(),
-        isTramway: updatedHasTram,
-        hasTram: updatedHasTram,
-        hasAB: hasAB !== undefined ? Boolean(hasAB) : Boolean(previous.hasAB ?? true),
-        hasTB: hasTB !== undefined ? Boolean(hasTB) : Boolean(previous.hasTB ?? true),
-        hasCTT: hasCTT !== undefined ? Boolean(hasCTT) : Boolean(previous.hasCTT),
-        isRailsGlissants: isRailsGlissants !== undefined ? Boolean(isRailsGlissants) : previous.isRailsGlissants,
-        notes: textField(notes, previous.notes || '')
-      };
-      const all = await client.query('SELECT id, data FROM tpg_private.formateurs WHERE id <> $1', [String(id)]);
-      if (all.rows.some(row => normalizeStr(String(row.data.nomComplet || '')) === normalizeStr(updated.nomComplet))) {
-        await client.query('ROLLBACK');
-        res.status(409).json({ error: 'Un autre formateur porte déjà ce nom.' });
-        return;
-      }
-      await client.query(
-        'UPDATE tpg_private.formateurs SET data = $2::jsonb, updated_at = NOW() WHERE id = $1',
-        [String(id), JSON.stringify(updated)]
-      );
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-    res.json({ success: true, formateur: updated!, message: 'Formateur mis à jour avec succès dans Supabase.' });
-  } catch (error) {
-    console.error('Erreur de modification du formateur dans Supabase :', error);
-    res.status(500).json({ error: 'Impossible de modifier le formateur dans Supabase.' });
+  const { nom, email, mobile, prenom, acronyme, isTramway, hasTram, hasAB, hasTB, hasCTT, isRailsGlissants, telephone, notes } = req.body;
+
+  const list = loadFormateurs();
+  const index = list.findIndex(f => String(f.id) === String(id));
+  if (index === -1) {
+    res.status(404).json({ error: 'Formateur non trouvé.' });
+    return;
   }
+
+  let cleanNomComplet = (nom || list[index].nomComplet).trim();
+  let cleanPrenom = prenom !== undefined ? prenom.trim() : list[index].prenom;
+  let cleanNom = list[index].nom;
+
+  if (nom && !prenom) {
+    const split = splitPrenomNom(cleanNomComplet);
+    cleanPrenom = split.prenom;
+    cleanNom = split.nom;
+  }
+
+  const updatedHasTram = hasTram !== undefined ? Boolean(hasTram) : (isTramway !== undefined ? Boolean(isTramway) : (list[index].hasTram ?? list[index].isTramway));
+  const updatedHasAB = hasAB !== undefined ? Boolean(hasAB) : (list[index].hasAB ?? true);
+  const updatedHasTB = hasTB !== undefined ? Boolean(hasTB) : (list[index].hasTB ?? true);
+  const updatedHasCTT = hasCTT !== undefined ? Boolean(hasCTT) : Boolean(list[index].hasCTT);
+
+  list[index] = {
+    ...list[index],
+    prenom: cleanPrenom,
+    nom: cleanNom,
+    nomComplet: cleanNomComplet,
+    email: email !== undefined ? email.trim() : list[index].email,
+    mobile: mobile !== undefined ? mobile.trim() : (telephone !== undefined ? telephone.trim() : list[index].mobile),
+    telephone: telephone !== undefined ? telephone.trim() : (mobile !== undefined ? mobile.trim() : list[index].telephone),
+    acronyme: acronyme !== undefined ? acronyme.trim().toUpperCase() : list[index].acronyme,
+    isTramway: updatedHasTram,
+    hasTram: updatedHasTram,
+    hasAB: updatedHasAB,
+    hasTB: updatedHasTB,
+    hasCTT: updatedHasCTT,
+    isRailsGlissants: isRailsGlissants !== undefined ? Boolean(isRailsGlissants) : list[index].isRailsGlissants,
+    notes: notes !== undefined ? notes.trim() : list[index].notes
+  };
+
+  saveFormateurs(list);
+
+  const users = loadUsers();
+  const user = users.find(u => String(u.formateurId) === String(id));
+  if (user) {
+    user.nomComplet = cleanNomComplet;
+    saveUsers(users);
+  }
+
+  res.json({
+    success: true,
+    formateur: list[index],
+    message: 'Formateur mis à jour avec succès.'
+  });
 });
 
-// Delete only the directory entry. Account management remains a separate admin task.
-app.delete('/api/formateurs/:id', requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'DELETE FROM tpg_private.formateurs WHERE id = $1 RETURNING data',
-      [String(req.params.id)]
-    );
-    if (result.rowCount === 0) {
-      res.status(404).json({ error: 'Formateur non trouvé.' });
-      return;
-    }
-    const deleted = result.rows[0].data as StoredFormateur;
-    res.json({ success: true, message: `Formateur ${deleted.nomComplet} supprimé avec succès.` });
-  } catch (error) {
-    console.error('Erreur de suppression du formateur dans Supabase :', error);
-    res.status(500).json({ error: 'Impossible de supprimer le formateur dans Supabase.' });
+// Supprimer un formateur (ADMIN OU RESPONSABLE)
+app.delete('/api/formateurs/:id', requireAuth, requireAdminOrResp, (req, res) => {
+  const { id } = req.params;
+  const list = loadFormateurs();
+  const index = list.findIndex(f => String(f.id) === String(id));
+  if (index === -1) {
+    res.status(404).json({ error: 'Formateur non trouvé.' });
+    return;
   }
+
+  const deleted = list.splice(index, 1)[0];
+  saveFormateurs(list);
+
+  const users = loadUsers();
+  const userIdx = users.findIndex(u => String(u.formateurId) === String(id));
+  if (userIdx !== -1) {
+    users.splice(userIdx, 1);
+    saveUsers(users);
+  }
+
+  res.json({
+    success: true,
+    message: `Formateur ${deleted.nomComplet} supprimé avec succès.`
+  });
 });
 
-// App configuration (mail routes, etc.)
+// Obtenir les informations de compte / identifiants d'un formateur (ADMIN OU RESPONSABLE)
+app.get('/api/formateurs/:id/account', requireAuth, requireAdminOrResp, (req, res) => {
+  const { id } = req.params;
+  const list = loadFormateurs();
+  const formateur = list.find(f => String(f.id) === String(id));
+  if (!formateur) {
+    res.status(404).json({ error: 'Formateur non trouvé.' });
+    return;
+  }
+
+  const users = loadUsers();
+  let user = users.find(u => String(u.formateurId) === String(id));
+
+  // Si le compte utilisateur n'existe pas encore pour ce formateur, le créer
+  if (!user) {
+    const cleanPrenom = formateur.prenom || '';
+    const cleanNom = formateur.nom || '';
+    const username = (cleanPrenom + '.' + cleanNom).toLowerCase().replace(/[^a-z0-9.]/g, '') || `user${formateur.id}`;
+    user = {
+      id: `usr-${formateur.id}`,
+      username,
+      passwordHash: bcrypt.hashSync(DEFAULT_FORMATEUR_PASSWORD, bcrypt.genSaltSync(10)),
+      nomComplet: formateur.nomComplet,
+      role: 'formateur',
+      formateurId: formateur.id,
+      mustChangePassword: true
+    };
+    users.push(user);
+    saveUsers(users);
+  }
+
+  res.json({
+    formateurId: formateur.id,
+    nomComplet: formateur.nomComplet,
+    email: formateur.email,
+    mobile: formateur.mobile || formateur.telephone,
+    username: user.username,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword === true,
+    defaultTempPassword: user.mustChangePassword ? DEFAULT_FORMATEUR_PASSWORD : null
+  });
+});
+
+// Réinitialiser le mot de passe provisoire d'un formateur (ADMIN OU RESPONSABLE)
+app.post('/api/formateurs/:id/reset-password', requireAuth, requireAdminOrResp, (req, res) => {
+  const { id } = req.params;
+  const list = loadFormateurs();
+  const formateur = list.find(f => String(f.id) === String(id));
+  if (!formateur) {
+    res.status(404).json({ error: 'Formateur non trouvé.' });
+    return;
+  }
+
+  const users = loadUsers();
+  let user = users.find(u => String(u.formateurId) === String(id));
+  const tempPassword = req.body.newPassword ? String(req.body.newPassword).trim() : generateTempPassword();
+
+  if (!user) {
+    const cleanPrenom = formateur.prenom || '';
+    const cleanNom = formateur.nom || '';
+    const username = (cleanPrenom + '.' + cleanNom).toLowerCase().replace(/[^a-z0-9.]/g, '') || `user${formateur.id}`;
+    user = {
+      id: `usr-${formateur.id}`,
+      username,
+      passwordHash: bcrypt.hashSync(tempPassword, bcrypt.genSaltSync(10)),
+      nomComplet: formateur.nomComplet,
+      role: 'formateur',
+      formateurId: formateur.id,
+      mustChangePassword: true
+    };
+    users.push(user);
+  } else {
+    user.passwordHash = bcrypt.hashSync(tempPassword, bcrypt.genSaltSync(10));
+    user.mustChangePassword = true;
+  }
+
+  saveUsers(users);
+
+  res.json({
+    success: true,
+    username: user.username,
+    nomComplet: formateur.nomComplet,
+    tempPassword,
+    message: `Mot de passe provisoire pour ${formateur.nomComplet} réinitialisé avec succès.`
+  });
+});
+
+// Liste récapitulative de tous les accès formateurs (ADMIN OU RESPONSABLE)
+app.get('/api/formateurs-accounts', requireAuth, requireAdminOrResp, (req, res) => {
+  const formateurs = loadFormateurs();
+  const users = loadUsers();
+
+  const accounts = formateurs.map(f => {
+    const user = users.find(u => String(u.formateurId) === String(f.id));
+    return {
+      id: f.id,
+      nomComplet: f.nomComplet,
+      email: f.email,
+      mobile: f.mobile || f.telephone,
+      username: user ? user.username : (f.prenom + '.' + f.nom).toLowerCase().replace(/[^a-z0-9.]/g, ''),
+      mustChangePassword: user ? (user.mustChangePassword === true) : true,
+      hasLoggedIn: user ? !user.mustChangePassword : false,
+      defaultTempPassword: DEFAULT_FORMATEUR_PASSWORD
+    };
+  });
+
+  res.json({
+    defaultPassword: DEFAULT_FORMATEUR_PASSWORD,
+    total: accounts.length,
+    accounts
+  });
+});
+
+// Configuration de l'application (e-mails, options TB, etc.)
 app.get('/api/config', (req, res) => {
   res.json(loadConfig());
 });
@@ -1001,7 +1163,7 @@ app.put('/api/config', requireAuth, requireAdminOrResp, (req, res) => {
 });
 
 // ==========================================================
-// VITE DEV SERVER OR STATIC PROD SERVING
+// VITE DEV SERVER OU SERVEUR STATIQUE EN PRODUCTION
 // ==========================================================
 async function startServer() {
   if (!IS_PROD) {

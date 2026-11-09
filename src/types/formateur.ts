@@ -1,5 +1,6 @@
 export interface Formateur {
   id: string;
+  numeroAgent?: string;
   prenom: string;
   nom: string;
   nomComplet: string;
