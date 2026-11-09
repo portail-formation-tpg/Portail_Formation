@@ -337,17 +337,6 @@ export const FormateursDirectory: React.FC<Props> = ({
             <span className="hidden sm:inline">CSV</span>
           </button>
 
-          {isStrictAdmin && (
-            <button
-              type="button"
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-600 rounded-lg text-xs font-bold transition cursor-pointer"
-              title="Réinitialiser l'annuaire d'origine v20 (29 formateurs officiels)"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-red-500" />
-              <span className="hidden md:inline text-red-600">Réinit. Usine (29)</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -936,46 +925,7 @@ export const FormateursDirectory: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Confirmation Modal for Resetting to Defaults */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-            <div className="bg-[#FD5312] p-4 text-white flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 shrink-0" />
-              <h3 className="font-bold text-sm uppercase tracking-wide">
-                Réinitialisation aux données sources
-              </h3>
-            </div>
-            <div className="p-5 space-y-3">
-              <p className="text-sm text-gray-700">
-                Voulez-vous réinitialiser l’annuaire des formateurs à l'état strict du fichier source officiel ?
-              </p>
-              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-950 space-y-1">
-                <div>• Restaure les 29 formateurs certifiés</div>
-                <div>• Restaure les 11 habilitations Tramway certifiées</div>
-                <div>• Réassigne les e-mails et numéros de mobile d'origine</div>
-              </div>
-            </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                disabled={isResetting}
-                onClick={confirmReset}
-                className="px-4 py-2 bg-[#FD5312] hover:bg-[#e04508] text-white rounded-lg text-xs font-black uppercase transition cursor-pointer shadow-sm"
-              >
-                {isResetting ? 'Réinitialisation...' : 'Confirmer la réinitialisation'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Individual Formateur Detail Modal */}
       {selectedFormateur && (

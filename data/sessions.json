@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "token": "b72d8eab467334005d2b1dab069591b8c1f328fa584ad9e7bde779369f847d55",
+    "userId": "usr-admin",
+    "username": "admin",
+    "nomComplet": "Administrateur TPG",
+    "role": "admin",
+    "createdAt": 1794251695913,
+    "expiresAt": 1796843695913
+  }
+]
