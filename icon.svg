@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="tpgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B2B"/>
+      <stop offset="100%" stop-color="#FD5312"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background with rounded corners for icon preview -->
+  <rect width="512" height="512" rx="112" fill="url(#tpgGrad)"/>
+  
+  <!-- Tram / Transport Silhouette & Rails Graphic -->
+  <g filter="url(#shadow)" fill="#ffffff">
+    <!-- Header band / Tram pantograph -->
+    <path d="M 230 110 L 282 110 L 296 140 L 216 140 Z" fill="#ffffff" opacity="0.95"/>
+    <rect x="250" y="85" width="12" height="25" rx="3" fill="#ffffff"/>
+    <line x1="220" y1="85" x2="292" y2="85" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Tram/Bus body -->
+    <rect x="136" y="140" width="240" height="230" rx="32" fill="#ffffff"/>
+  </g>
+
+  <!-- Front windshield and windows (TPG Orange cutout) -->
+  <rect x="160" y="164" width="192" height="96" rx="16" fill="#FD5312"/>
+  
+  <!-- Destination sign -->
+  <rect x="196" y="174" width="120" height="22" rx="6" fill="#111827"/>
+  <text x="256" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="900" fill="#FD5312" text-anchor="middle" letter-spacing="2">FORMATION</text>
+
+  <!-- Split windshield effect -->
+  <line x1="256" y1="202" x2="256" y2="260" stroke="#FD5312" stroke-width="4"/>
+
+  <!-- Tram headlights -->
+  <circle cx="180" cy="316" r="14" fill="#FD5312"/>
+  <circle cx="180" cy="316" r="8" fill="#FEE2E2"/>
+  <circle cx="332" cy="316" r="14" fill="#FD5312"/>
+  <circle cx="332" cy="316" r="8" fill="#FEE2E2"/>
+
+  <!-- TPG monogram in front grille -->
+  <text x="256" y="324" font-family="'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="950" fill="#111827" text-anchor="middle" letter-spacing="-1">tpg</text>
+
+  <!-- Tram bumper and rails below -->
+  <rect x="170" y="354" width="172" height="12" rx="6" fill="#E5E7EB"/>
+  
+  <!-- Steel rails -->
+  <line x1="100" y1="420" x2="412" y2="420" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <line x1="130" y1="444" x2="382" y2="444" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <!-- Rail ties -->
+  <line x1="160" y1="412" x2="160" y2="452" stroke="#ffffff" stroke-width="6" opacity="0.5"/>
+  <line x1="220" y1="412" x2="220" y2="452" stroke="#ffffff" stroke-width="6" opacity="0.5"/>
+  <line x1="280" y1="412" x2="280" y2="452" stroke="#ffffff" stroke-width="6" opacity="0.5"/>
+  <line x1="340" y1="412" x2="340" y2="452" stroke="#ffffff" stroke-width="6" opacity="0.5"/>
+</svg>

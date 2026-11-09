@@ -1,0 +1,304 @@
+[
+  {
+    "id": "usr-admin",
+    "username": "admin",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu4./POGPlj1hS8/kRsRPBlETjPUxF6W2",
+    "nomComplet": "Administrateur TPG",
+    "role": "admin"
+  },
+  {
+    "id": "usr-resp",
+    "username": "responsable",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiutyqssQqbMqumcuHCKsCMCo001b0hr/K",
+    "nomComplet": "Responsable Formation TPG",
+    "role": "responsable"
+  },
+  {
+    "id": "usr-1",
+    "username": "abdelaziz.aggoune",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Abdel Aziz AGGOUNE",
+    "role": "formateur",
+    "formateurId": "1",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-2",
+    "username": "ailton.neridossantosjunior",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Ailton NERI DOS SANTOS JUNIOR",
+    "role": "formateur",
+    "formateurId": "2",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-3",
+    "username": "angelino.ribeiromonteiro",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Angelino RIBEIRO MONTEIRO",
+    "role": "formateur",
+    "formateurId": "3",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-4",
+    "username": "angelo.cepeda",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Angelo CEPEDA",
+    "role": "formateur",
+    "formateurId": "4",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-5",
+    "username": "anis.mensi",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Anis MENSI",
+    "role": "formateur",
+    "formateurId": "5",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-6",
+    "username": "arvid.leppin",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Arvid LEPPIN",
+    "role": "formateur",
+    "formateurId": "6",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-7",
+    "username": "astrid.annen",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Astrid ANNEN",
+    "role": "formateur",
+    "formateurId": "7",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-8",
+    "username": "benot.thevenin",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Benoît THEVENIN",
+    "role": "formateur",
+    "formateurId": "8",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-9",
+    "username": "bruno.cimarossa",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Bruno CIMAROSSA",
+    "role": "formateur",
+    "formateurId": "9",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-10",
+    "username": "carlos.martins",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Carlos MARTINS",
+    "role": "formateur",
+    "formateurId": "10",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-11",
+    "username": "christian.noverraz",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Christian NOVERRAZ",
+    "role": "formateur",
+    "formateurId": "11",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-12",
+    "username": "david.abellaneda",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "David ABELLANEDA",
+    "role": "formateur",
+    "formateurId": "12",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-13",
+    "username": "fabio.alemanno",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Fabio ALEMANNO",
+    "role": "formateur",
+    "formateurId": "13",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-14",
+    "username": "fitim.iseni",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Fitim ISENI",
+    "role": "formateur",
+    "formateurId": "14",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-16",
+    "username": "gianpiero.sebastianelli",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Gianpiero SEBASTIANELLI",
+    "role": "formateur",
+    "formateurId": "16",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-17",
+    "username": "grgory.despres",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Grégory DESPRES",
+    "role": "formateur",
+    "formateurId": "17",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-18",
+    "username": "ilyes.bentaiba",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Ilyes BENTAIBA",
+    "role": "formateur",
+    "formateurId": "18",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-19",
+    "username": "jacques.krieg",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Jacques KRIEG",
+    "role": "formateur",
+    "formateurId": "19",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-20",
+    "username": "james.scotton",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "James SCOTTON",
+    "role": "formateur",
+    "formateurId": "20",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-21",
+    "username": "jrme.chessel",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Jérôme CHESSEL",
+    "role": "formateur",
+    "formateurId": "21",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-22",
+    "username": "jos.martin",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "José MARTIN",
+    "role": "formateur",
+    "formateurId": "22",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-23",
+    "username": "josmanuel.moreira",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "José Manuel MOREIRA",
+    "role": "formateur",
+    "formateurId": "23",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-24",
+    "username": "josantonio.perez",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "José-Antonio PEREZ",
+    "role": "formateur",
+    "formateurId": "24",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-25",
+    "username": "joseph.foti",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Joseph FOTI",
+    "role": "formateur",
+    "formateurId": "25",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-26",
+    "username": "luisfernando.garciadaza",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Luis Fernando GARCIA DAZA",
+    "role": "formateur",
+    "formateurId": "26",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-27",
+    "username": "raffaele.caiola",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Raffaele CAIOLA",
+    "role": "formateur",
+    "formateurId": "27",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-28",
+    "username": "sami.essebbani",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Sami ESSEBBANI",
+    "role": "formateur",
+    "formateurId": "28",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-29",
+    "username": "stanislas.ruckebusch",
+    "passwordHash": "$2b$10$Iak4ENmbD0xNyIo8RkPaiu/FuY.MA/HOeEVyYNVCOFjs/FM8KzGs6",
+    "nomComplet": "Stanislas RUCKEBUSCH",
+    "role": "formateur",
+    "formateurId": "29",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-1794123929709",
+    "username": "jean.dupont",
+    "passwordHash": "$2b$10$nuzx0yy2m7Pr2GEmwZHxPerLoFkb8nsMfygLf72kOhwztejqBrye.",
+    "nomComplet": "Jean DUPONT",
+    "role": "formateur",
+    "formateurId": "1794123929709",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-1794124130081",
+    "username": "marc.vaucher",
+    "passwordHash": "$2b$10$rLsBaeTmuGBMAQSk28mok.ROBkfrHr.Eg27mvztU1ayZAPY0AjB/y",
+    "nomComplet": "Marc VAUCHER",
+    "role": "formateur",
+    "formateurId": "1794124130081",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-99991",
+    "username": "sophie.blanc",
+    "passwordHash": "$2b$10$vQXKeJ6Ny/ILwXM7e8vp7uMsDIe8.JGba8JByVJRtKTEilOA4fRle",
+    "nomComplet": "Sophie BLANC",
+    "role": "formateur",
+    "formateurId": "99991",
+    "mustChangePassword": true
+  },
+  {
+    "id": "usr-1794125260457",
+    "username": "lucas.bertrand",
+    "passwordHash": "$2b$10$URooqfySUEEP0OA9Kw0aIOc5msxZPfL.MsSFkn0FrKEv79FoaqS7G",
+    "nomComplet": "Lucas BERTRAND",
+    "role": "formateur",
+    "formateurId": "1794125260457",
+    "mustChangePassword": false
+  }
+]

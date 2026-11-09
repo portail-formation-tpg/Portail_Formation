@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Formateur } from '../../types/formateur';
 import { FormateurDetailModal } from './FormateurDetailModal';
 import { AuditDiscrepanciesModal } from './AuditDiscrepanciesModal';
+import { FormateursAccessGuideModal } from './FormateursAccessGuideModal';
 import { TramLogoBadge, AbtbLogoBadge, AbBadge, TbBadge, CttBadge, FormateurVehicleLogos } from '../common/VehicleBadges';
 import { validerEmail, validerEtFormaterMobile } from '../../utils/tpgHelpers';
+import { useAuth } from '../../context/AuthContext';
 import {
   Search,
   Plus,
@@ -14,12 +16,13 @@ import {
   Check,
   X,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  RefreshCw,
+  KeyRound
 } from 'lucide-react';
 
 interface Props {
   formateurs: Formateur[];
-  canManage: boolean;
   onRefresh: () => Promise<void>;
   onCreate: (data: Partial<Formateur>) => Promise<void>;
   onUpdate: (id: string, data: Partial<Formateur>) => Promise<void>;
@@ -29,13 +32,17 @@ interface Props {
 
 export const FormateursDirectory: React.FC<Props> = ({
   formateurs,
-  canManage,
   onRefresh,
   onCreate,
   onUpdate,
   onDelete,
   onResetDefaults
 }) => {
+  const { user, isAdmin, isAdminOrResp } = useAuth();
+  // Seul l'administrateur (ou responsable) voit et peut modifier/ajouter des personnes
+  const canManage = isAdminOrResp;
+  const isStrictAdmin = isAdmin;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'tram' | 'ab' | 'tb' | 'ctt'>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -65,6 +72,7 @@ export const FormateursDirectory: React.FC<Props> = ({
   // Modals state
   const [selectedFormateur, setSelectedFormateur] = useState<Formateur | null>(null);
   const [auditModalOpen, setAuditModalOpen] = useState(false);
+  const [accessGuideModalOpen, setAccessGuideModalOpen] = useState(false);
 
   // Deletion confirmation modal
   const [deleteCandidate, setDeleteCandidate] = useState<Formateur | null>(null);
@@ -139,7 +147,6 @@ export const FormateursDirectory: React.FC<Props> = ({
 
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canManage) return;
     if (!newNom.trim()) {
       showNotification('Veuillez renseigner un Nom & Prénom.', 'error');
       return;
@@ -174,7 +181,6 @@ export const FormateursDirectory: React.FC<Props> = ({
   };
 
   const startInlineEdit = (f: Formateur) => {
-    if (!canManage) return;
     setInlineEditingId(f.id);
     setEditNom(f.nomComplet);
     setEditEmail(f.email || '');
@@ -190,7 +196,6 @@ export const FormateursDirectory: React.FC<Props> = ({
   };
 
   const saveInlineEdit = async (id: string) => {
-    if (!canManage) return;
     if (!editNom.trim()) {
       showNotification('Le nom ne peut pas être vide.', 'error');
       return;
@@ -219,7 +224,6 @@ export const FormateursDirectory: React.FC<Props> = ({
   };
 
   const confirmDelete = async () => {
-    if (!canManage) return;
     if (!deleteCandidate) return;
     setIsDeleting(true);
     try {
@@ -234,7 +238,6 @@ export const FormateursDirectory: React.FC<Props> = ({
   };
 
   const confirmReset = async () => {
-    if (!canManage) return;
     setIsResetting(true);
     try {
       await onResetDefaults();
@@ -287,14 +290,41 @@ export const FormateursDirectory: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setAccessGuideModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-900 rounded-lg text-xs font-bold transition cursor-pointer"
+              title="Guide et transmission des 1ers mots de passe provisoires"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-[#FD5312]" />
+              <span className="hidden sm:inline">Accès & Mots de passe</span>
+            </button>
+          )}
+
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setAuditModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer"
+              title="Consulter l'audit des données sources"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-[#FD5312]" />
+              <span className="hidden sm:inline">Audit Sources</span>
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => setAuditModalOpen(true)}
+            onClick={async () => {
+              await onRefresh();
+              showNotification('Annuaire synchronisé et actualisé.');
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer"
-            title="Consulter l'audit des données sources"
+            title="Rafraîchir et synchroniser la liste"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-[#FD5312]" />
-            <span className="hidden sm:inline">Audit Sources</span>
+            <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">Actualiser</span>
           </button>
 
           <button
@@ -307,15 +337,17 @@ export const FormateursDirectory: React.FC<Props> = ({
             <span className="hidden sm:inline">CSV</span>
           </button>
 
-          {canManage && <button
-            type="button"
-            onClick={() => setShowResetConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-600 rounded-lg text-xs font-bold transition cursor-pointer"
-            title="Réinitialiser la liste officielle v20"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Réinitialiser</span>
-          </button>}
+          {isStrictAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowResetConfirm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-600 rounded-lg text-xs font-bold transition cursor-pointer"
+              title="Réinitialiser l'annuaire d'origine v20 (29 formateurs officiels)"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-red-500" />
+              <span className="hidden md:inline text-red-600">Réinit. Usine (29)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -345,137 +377,139 @@ export const FormateursDirectory: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Formulaire d'ajout rapide (Choix des qualifications Tram, AB, TB) */}
-      {canManage && <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-4 sm:p-5 mb-5 shadow-xs">
-        <h3
-          className="text-sm font-bold text-[#FD5312] uppercase tracking-wide mb-3"
-          style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-        >
-          Ajouter un nouveau formateur
-        </h3>
-        <form onSubmit={handleQuickAdd}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <div>
-              <label
-                className="block text-xs text-gray-700 mb-1"
-                style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-              >
-                Nom & Prénom <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={newNom}
-                onChange={(e) => setNewNom(e.target.value)}
-                placeholder="Ex: Jean DUPONT"
-                className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition"
-              />
-            </div>
-
-            <div>
-              <label
-                className="block text-xs text-gray-700 mb-1"
-                style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-              >
-                E-mail TPG
-              </label>
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="dupont.j@tpg.ch"
-                className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition"
-              />
-            </div>
-
-            <div>
-              <label
-                className="block text-xs text-gray-700 mb-1"
-                style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-              >
-                Portable
-              </label>
-              <input
-                type="text"
-                value={newMobile}
-                onChange={(e) => setNewMobile(e.target.value)}
-                placeholder="+41 79 000 00 00"
-                className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition font-mono"
-              />
-            </div>
-          </div>
-
-          {/* Choix des qualifications requises : Habilité Tram, Habilité AB, Habilité TB */}
-          <div className="pt-2 border-t border-gray-200 mt-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs text-gray-700 uppercase">
-                  Qualifications :
-                </span>
-
-                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-orange-300 transition">
-                  <input
-                    type="checkbox"
-                    checked={newHasTram}
-                    onChange={(e) => setNewHasTram(e.target.checked)}
-                    className="w-4 h-4 accent-[#FD5312] rounded cursor-pointer"
-                  />
-                  <span>Habilité Tram</span>
-                  <TramLogoBadge />
+      {/* Formulaire d'ajout rapide (Visible EXCLUSIVEMENT pour le compte administrateur/responsable) */}
+      {canManage && (
+        <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-4 sm:p-5 mb-5 shadow-xs">
+          <h3
+            className="text-sm font-bold text-[#FD5312] uppercase tracking-wide mb-3"
+            style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+          >
+            Ajouter un nouveau formateur
+          </h3>
+          <form onSubmit={handleQuickAdd}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+              <div>
+                <label
+                  className="block text-xs text-gray-700 mb-1"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  Nom & Prénom <span className="text-red-500">*</span>
                 </label>
-
-                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-sky-300 transition">
-                  <input
-                    type="checkbox"
-                    checked={newHasAB}
-                    onChange={(e) => setNewHasAB(e.target.checked)}
-                    className="w-4 h-4 accent-[#008CBE] rounded cursor-pointer"
-                  />
-                  <span>Habilité AB</span>
-                  <AbBadge />
-                </label>
-
-                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 transition">
-                  <input
-                    type="checkbox"
-                    checked={newHasTB}
-                    onChange={(e) => setNewHasTB(e.target.checked)}
-                    className="w-4 h-4 accent-[#059669] rounded cursor-pointer"
-                  />
-                  <span>Habilité TB</span>
-                  <TbBadge />
-                </label>
-
-                <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition">
-                  <input
-                    type="checkbox"
-                    checked={newHasCTT}
-                    onChange={(e) => setNewHasCTT(e.target.checked)}
-                    className="w-4 h-4 accent-[#6D28D9] rounded cursor-pointer"
-                  />
-                  <span>Habilité CTT</span>
-                  <CttBadge />
-                </label>
-
-                <div className="hidden lg:flex items-center gap-1 pl-2 text-xs text-gray-500">
-                  <span className="text-gray-400">Aperçu :</span>
-                  <FormateurVehicleLogos hasTram={newHasTram} hasAB={newHasAB} hasTB={newHasTB} hasCTT={newHasCTT} />
-                </div>
+                <input
+                  type="text"
+                  required
+                  value={newNom}
+                  onChange={(e) => setNewNom(e.target.value)}
+                  placeholder="Ex: Jean DUPONT"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition"
+                />
               </div>
 
-              <button
-                type="submit"
-                disabled={quickAddSubmitting}
-                className="px-5 py-2.5 bg-[#FD5312] hover:bg-[#e04508] active:scale-95 text-white font-extrabold uppercase text-xs rounded-lg shadow-sm hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-              >
-                <Plus className="w-4 h-4" />
-                <span>{quickAddSubmitting ? 'Ajout en cours...' : '+ AJOUTER À LA LISTE'}</span>
-              </button>
+              <div>
+                <label
+                  className="block text-xs text-gray-700 mb-1"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  E-mail TPG
+                </label>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="dupont.j@tpg.ch"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-xs text-gray-700 mb-1"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  Portable
+                </label>
+                <input
+                  type="text"
+                  value={newMobile}
+                  onChange={(e) => setNewMobile(e.target.value)}
+                  placeholder="+41 79 000 00 00"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 outline-none transition font-mono"
+                />
+              </div>
             </div>
-          </div>
-        </form>
-      </div>}
+
+            {/* Choix des qualifications requises : Habilité Tram, Habilité AB, Habilité TB */}
+            <div className="pt-2 border-t border-gray-200 mt-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs text-gray-700 uppercase">
+                    Qualifications :
+                  </span>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-orange-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={newHasTram}
+                      onChange={(e) => setNewHasTram(e.target.checked)}
+                      className="w-4 h-4 accent-[#FD5312] rounded cursor-pointer"
+                    />
+                    <span>Habilité Tram</span>
+                    <TramLogoBadge />
+                  </label>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-sky-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={newHasAB}
+                      onChange={(e) => setNewHasAB(e.target.checked)}
+                      className="w-4 h-4 accent-[#008CBE] rounded cursor-pointer"
+                    />
+                    <span>Habilité AB</span>
+                    <AbBadge />
+                  </label>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={newHasTB}
+                      onChange={(e) => setNewHasTB(e.target.checked)}
+                      className="w-4 h-4 accent-[#059669] rounded cursor-pointer"
+                    />
+                    <span>Habilité TB</span>
+                    <TbBadge />
+                  </label>
+
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-800 p-1.5 px-2 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition">
+                    <input
+                      type="checkbox"
+                      checked={newHasCTT}
+                      onChange={(e) => setNewHasCTT(e.target.checked)}
+                      className="w-4 h-4 accent-[#6D28D9] rounded cursor-pointer"
+                    />
+                    <span>Habilité CTT</span>
+                    <CttBadge />
+                  </label>
+
+                  <div className="hidden lg:flex items-center gap-1 pl-2 text-xs text-gray-500">
+                    <span className="text-gray-400">Aperçu :</span>
+                    <FormateurVehicleLogos hasTram={newHasTram} hasAB={newHasAB} hasTB={newHasTB} hasCTT={newHasCTT} />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={quickAddSubmitting}
+                  className="px-5 py-2.5 bg-[#FD5312] hover:bg-[#e04508] active:scale-95 text-white font-extrabold uppercase text-xs rounded-lg shadow-sm hover:shadow transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{quickAddSubmitting ? 'Ajout en cours...' : '+ AJOUTER À LA LISTE'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Barre de Recherche et Filtres */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 no-print">
@@ -512,9 +546,9 @@ export const FormateursDirectory: React.FC<Props> = ({
 
         <div className="flex flex-col justify-end">
           <div className="flex flex-wrap items-center justify-between text-xs text-gray-500 pb-1 gap-2">
-            {canManage && <span className="italic text-[12px] text-gray-500">
+            <span className="italic text-[12px] text-gray-500">
               Les modifications ou ajouts mettent à jour automatiquement l'application.
-            </span>}
+            </span>
             <div className="flex items-center gap-1.5 ml-auto flex-wrap">
               <button
                 type="button"
@@ -607,12 +641,14 @@ export const FormateursDirectory: React.FC<Props> = ({
               >
                 Numéro Portable
               </th>
-              {canManage && <th
-                className="p-3.5 no-print w-44 text-right"
-                style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
-              >
-                Actions
-              </th>}
+              {canManage && (
+                <th
+                  className="p-3.5 no-print w-44 text-right"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -626,7 +662,7 @@ export const FormateursDirectory: React.FC<Props> = ({
               filteredFormateurs.map((f) => {
                 const emailOk = validerEmail(f.email);
                 const { estValide: mobileOk, formate: mobileFormate } = validerEtFormaterMobile(f.mobile || f.telephone);
-                const isEditingThis = canManage && inlineEditingId === f.id;
+                const isEditingThis = inlineEditingId === f.id;
 
                 return (
                   <tr key={f.id} className="hover:bg-gray-50/90 transition">
@@ -697,6 +733,11 @@ export const FormateursDirectory: React.FC<Props> = ({
                           >
                             {f.nomComplet}
                           </button>
+                          {f.numeroAgent && (
+                            <span className="text-[11px] text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200" title="Numéro d'agent TPG">
+                              N° {f.numeroAgent}
+                            </span>
+                          )}
 
                           {/* Logos TPG selon qualifications */}
                           <div className="flex items-center gap-1.5 shrink-0">
@@ -759,68 +800,80 @@ export const FormateursDirectory: React.FC<Props> = ({
                       ) : (
                         <div className="flex items-center gap-2">
                           {f.mobile || f.telephone ? (
-                            <a
-                              href={`tel:${(f.mobile || f.telephone || '').replace(/\s+/g, '')}`}
-                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium font-mono"
-                            >
-                              {mobileFormate || f.mobile || f.telephone}
-                            </a>
+                            <>
+                              <a
+                                href={`tel:${(f.mobile || f.telephone || '').replace(/\s+/g, '')}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline font-medium font-mono"
+                              >
+                                {mobileFormate || f.mobile || f.telephone}
+                              </a>
+                              <span
+                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-black text-white shrink-0 ${
+                                  mobileOk ? 'bg-[#16a34a]' : 'bg-[#dc2626]'
+                                }`}
+                                title={mobileOk ? 'Numéro de mobile suisse valide' : 'Format invalide (attendu +41 7x)'}
+                              >
+                                {mobileOk ? '✓' : '✗'}
+                              </span>
+                            </>
                           ) : (
-                            <span className="text-gray-400 italic">Non renseigné</span>
+                            <>
+                              <span className="text-gray-400 italic">Non renseigné</span>
+                              <span
+                                className="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 shrink-0"
+                                title="Numéro de portable non attribué pour le moment"
+                              >
+                                En attente
+                              </span>
+                            </>
                           )}
-                          <span
-                            className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-black text-white shrink-0 ${
-                              mobileOk ? 'bg-[#16a34a]' : 'bg-[#dc2626]'
-                            }`}
-                            title={mobileOk ? 'Numéro de mobile suisse valide' : 'Format invalide (attendu +41 7x)'}
-                          >
-                            {mobileOk ? '✓' : '✗'}
-                          </span>
                         </div>
                       )}
                     </td>
 
-                    {/* Actions (ÉDITER / SUPPR. exactly as in screenshot) */}
-                    {canManage && <td className="p-3.5 text-right no-print">
-                      {isEditingThis ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            disabled={isSavingEdit}
-                            onClick={() => saveInlineEdit(f.id)}
-                            className="px-3 py-1.5 bg-[#16a34a] hover:bg-emerald-700 active:scale-95 text-white rounded text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-xs disabled:opacity-50"
-                          >
-                            {isSavingEdit ? '...' : 'Enregistrer'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelInlineEdit}
-                            className="px-2.5 py-1.5 bg-gray-400 hover:bg-gray-500 active:scale-95 text-white rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-                          >
-                            Annuler
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startInlineEdit(f)}
-                            className="px-3 py-1.5 bg-[#1d7ed2] hover:bg-[#186bb5] active:scale-95 text-white rounded text-[11px] font-black uppercase tracking-wider transition cursor-pointer shadow-xs"
-                            title="Modifier ce formateur"
-                          >
-                            ÉDITER
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteCandidate(f)}
-                            className="px-3 py-1.5 bg-[#dc2626] hover:bg-red-700 active:scale-95 text-white rounded text-[11px] font-black uppercase tracking-wider transition cursor-pointer shadow-xs"
-                            title="Supprimer ce formateur"
-                          >
-                            SUPPR.
-                          </button>
-                        </div>
-                      )}
-                    </td>}
+                    {/* Actions (Accessible EXCLUSIVEMENT à l'administrateur / responsable) */}
+                    {canManage && (
+                      <td className="p-3.5 text-right no-print">
+                        {isEditingThis ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isSavingEdit}
+                              onClick={() => saveInlineEdit(f.id)}
+                              className="px-3 py-1.5 bg-[#16a34a] hover:bg-emerald-700 active:scale-95 text-white rounded text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-xs disabled:opacity-50"
+                            >
+                              {isSavingEdit ? '...' : 'Enregistrer'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelInlineEdit}
+                              className="px-2.5 py-1.5 bg-gray-400 hover:bg-gray-500 active:scale-95 text-white rounded text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startInlineEdit(f)}
+                              className="px-3 py-1.5 bg-[#1d7ed2] hover:bg-[#186bb5] active:scale-95 text-white rounded text-[11px] font-black uppercase tracking-wider transition cursor-pointer shadow-xs"
+                              title="Modifier ce formateur"
+                            >
+                              ÉDITER
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteCandidate(f)}
+                              className="px-3 py-1.5 bg-[#dc2626] hover:bg-red-700 active:scale-95 text-white rounded text-[11px] font-black uppercase tracking-wider transition cursor-pointer shadow-xs"
+                              title="Supprimer ce formateur"
+                            >
+                              SUPPR.
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 );
               })
@@ -830,7 +883,7 @@ export const FormateursDirectory: React.FC<Props> = ({
       </div>
 
       {/* Confirmation Modal for Deletion */}
-      {canManage && deleteCandidate && (
+      {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs p-4 animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             <div className="bg-red-600 p-4 text-white flex items-center gap-2">
@@ -884,7 +937,7 @@ export const FormateursDirectory: React.FC<Props> = ({
       )}
 
       {/* Confirmation Modal for Resetting to Defaults */}
-      {canManage && showResetConfirm && (
+      {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-xs p-4 animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             <div className="bg-[#FD5312] p-4 text-white flex items-center gap-2">
@@ -930,7 +983,6 @@ export const FormateursDirectory: React.FC<Props> = ({
           formateur={selectedFormateur}
           onClose={() => setSelectedFormateur(null)}
           onEdit={() => {
-            if (!canManage) return;
             startInlineEdit(selectedFormateur);
             setSelectedFormateur(null);
           }}
@@ -941,6 +993,11 @@ export const FormateursDirectory: React.FC<Props> = ({
       {/* Audit Sources Modal */}
       {auditModalOpen && (
         <AuditDiscrepanciesModal onClose={() => setAuditModalOpen(false)} />
+      )}
+
+      {/* Access & Passwords Guide Modal */}
+      {accessGuideModalOpen && (
+        <FormateursAccessGuideModal onClose={() => setAccessGuideModalOpen(false)} />
       )}
     </section>
   );

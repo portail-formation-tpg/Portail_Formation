@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'HelveticaNeue LT COM 65 MD';
+  src: local('HelveticaNeue LT COM 65 MD'), local('Helvetica Neue LT Com 65 Md'), local('Helvetica Neue'), local('Helvetica'), local('Arial');
+}
+
+@layer base {
+  :root {
+    --tpg-orange: #FD5312;
+    --tpg-navy: #111827;
+    --blue-print: #008CBE;
+    --gray-reset: #8C8C8E;
+  }
+
+  body {
+    background-color: #f0f0f0;
+    font-family: 'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+}
+
+.font-tpg {
+  font-family: 'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}

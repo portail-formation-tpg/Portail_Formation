@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PORTAIL FORMATION TPG</title>
+
+  <style>
+    @font-face {
+      font-family: 'HelveticaNeue LT COM 65 MD';
+      src: local('HelveticaNeue LT COM 65 MD'), local('Helvetica Neue LT Com 65 Md'), local('Helvetica Neue'), local('Helvetica');
+    }
+
+    :root {
+      --tpg-orange: #FD5312;
+      --bg: #f0f0f0;
+      --panel: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --blue-print: #008CBE;
+      --gray-reset: #8C8C8E;
+      --focus: rgba(253, 83, 18, .25);
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      font-family: "HelveticaNeue LT COM 65 MD", "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Modal Connexion */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(249, 250, 251, .95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    .modal h1 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 13.5px;
+      margin-bottom: 6px;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(253, 83, 18, .55);
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+    .error-text {
+      color: var(--danger);
+      font-size: 13px;
+      margin: 10px 0 0 0;
+    }
+
+    /* En-tête avec Logo blanc */
+    .topbar {
+      background: var(--tpg-orange);
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 12px 12px 0 0;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .topbar-logo {
+      height: 42px;
+      width: auto;
+      display: flex;
+      align-items: center;
+    }
+    .topbar-logo svg {
+      height: 100%;
+      width: auto;
+    }
+    .topbar .title {
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+      font-size: 22px;
+      text-transform: uppercase;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .topbar .subtitle {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: .95;
+      text-transform: uppercase;
+      margin: 0;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    /* Onglets */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+      background: #f8f8f8;
+    }
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 12px 10px;
+      text-align: left;
+      cursor: pointer;
+      color: #4b5563;
+      font-weight: 700;
+      font-size: 13.5px;
+      border-bottom: 4px solid transparent;
+      transition: all .15s ease;
+      min-height: 52px;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+    .tab-btn:hover {
+      background: #fff;
+      color: var(--tpg-orange);
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--tpg-orange);
+      border-bottom-color: var(--tpg-orange);
+    }
+
+    .required-star {
+      color: var(--danger);
+      font-weight: 900;
+      margin-left: 2px;
+    }
+
+    .content-wrap { padding: 16px; }
+
+    .module-header {
+      border-left: 6px solid var(--tpg-orange);
+      padding-left: 10px;
+      margin: 0 0 12px 0;
+    }
+    .module-header h2 {
+      margin: 0;
+      font-size: 18px;
+      text-transform: uppercase;
+      color: var(--tpg-orange);
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .field { margin-bottom: 12px; }
+
+    .category-title {
+      margin: 16px 0 8px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      font-weight: 700;
+      color: #111827;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 8px 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .checkbox-grid label {
+      margin: 0;
+      font-weight: 500;
+      font-size: 13.8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: #111827;
+      cursor: pointer;
+    }
+    .checkbox-grid input {
+      width: 18px; height: 18px;
+      accent-color: var(--tpg-orange);
+    }
+
+    /* Boutons */
+    .btnbar {
+      display: flex;
+      gap: 10px;
+      margin: 16px 0 10px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #fff;
+      transition: all .15s ease;
+      min-width: 150px;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif !important;
+      text-transform: uppercase;
+    }
+    .btn-reset { background: var(--gray-reset); }
+    .btn-print { background: var(--blue-print); }
+    .btn-mail { background: var(--tpg-orange); flex: 1; min-width: 220px; }
+    .btn-action { background: #3b82f6; min-width: auto; padding: 6px 12px; font-size: 11px; }
+    .btn-danger { background: var(--danger); min-width: auto; padding: 6px 12px; font-size: 11px; }
+    .btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
+
+    .preview-box {
+      border: 3px solid var(--tpg-orange);
+      padding: 18px;
+      border-radius: 10px;
+      background: #fff;
+      line-height: 1.6;
+      margin-top: 12px;
+      min-height: 240px;
+      white-space: pre-wrap;
+      font-size: 14.5px;
+    }
+
+    /* Annuaire */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f3f4f6;
+      padding: 12px;
+      font-family: 'HelveticaNeue LT COM 65 MD', sans-serif;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:hover td { background: #f9fafb; }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #fff;
+      margin-left: 6px;
+    }
+    .badge-success { background: var(--success); }
+    .badge-danger { background: var(--danger); }
+
+    .add-form-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .container { padding: 0; }
+      .panel { border: none; }
+      .preview-box { border: 2px solid var(--tpg-orange) !important; }
+    }
+
+    @media (max-width: 980px) {
+      .nav-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+
+<body>
+  <!-- Modal d'accès -->
+  <div id="loginOverlay" class="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <h1 id="loginTitle">Accès au portail</h1>
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="prenom">Prénom</label>
+          <input id="prenom" required placeholder="Votre prénom" />
+        </div>
+        <div class="field">
+          <label for="nom">Nom</label>
+          <input id="nom" required placeholder="Votre nom" />
+        </div>
+        <div id="loginError" class="error-text" style="display:none;">Nom et prénom non reconnus.</div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-mail" type="submit" style="width:100%;">Entrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Shell -->
+  <div id="app" class="container" style="display:none;">
+    <div class="panel">
+      <!-- En-tête avec Logo TPG BLANC exact -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-logo">
+            <svg viewBox="0 0 280 110" xml:space="preserve">
+              <path fill="#FFFFFF" d="M 64.8 38.6 C 64.8 20.3 50.4 5.9 32.7 5.9 C 14.9 5.9 0.5 20.3 0.5 38.6 C 0.5 56.8 14.9 71.3 32.7 71.3 C 42.1 71.3 50.6 67.2 56.5 60.7 L 38.8 60.7 C 34.6 63.8 29.4 65.6 23.7 65.6 C 11.2 65.6 1.1 55.4 1.1 42.9 C 1.1 30.4 11.2 20.2 23.7 20.2 C 36.2 20.2 46.3 30.4 46.3 42.9 L 64.8 38.6 Z"/>
+              <path fill="#FFFFFF" d="M 116.5 5.9 L 98.0 5.9 L 98.0 20.2 L 83.2 20.2 L 83.2 34.5 L 98.0 34.5 L 98.0 95.3 L 116.5 95.3 L 116.5 34.5 L 131.3 34.5 L 131.3 20.2 L 116.5 20.2 Z"/>
+              <path fill="#FFFFFF" d="M 148.5 20.2 L 167.0 20.2 L 167.0 28.5 C 172.5 23.2 180.0 20.2 188.1 20.2 C 205.8 20.2 220.2 34.6 220.2 52.9 C 220.2 71.1 205.8 85.5 188.1 85.5 C 180.0 85.5 172.5 82.5 167.0 77.2 L 167.0 95.3 L 148.5 95.3 Z M 184.3 34.5 C 174.2 34.5 167.0 42.7 167.0 52.9 C 167.0 63.0 174.2 71.3 184.3 71.3 C 194.5 71.3 201.7 63.0 201.7 52.9 C 201.7 42.7 194.5 34.5 184.3 34.5 Z"/>
+              <path fill="#FFFFFF" d="M 228.3 20.2 L 246.8 20.2 L 246.8 28.5 C 252.3 23.2 259.8 20.2 267.9 20.2 C 285.6 20.2 300.0 34.6 300.0 52.9 C 300.0 71.1 285.6 85.5 267.9 85.5 C 259.8 85.5 252.3 82.5 246.8 77.2 L 246.8 81.2 C 246.8 91.3 239.6 99.5 229.5 99.5 L 211.0 99.5 L 211.0 85.2 L 228.3 85.2 Z M 264.1 34.5 C 254.0 34.5 246.8 42.7 246.8 52.9 C 246.8 63.0 254.0 71.3 264.1 71.3 C 274.3 71.3 281.5 63.0 281.5 52.9 C 281.5 42.7 274.3 34.5 264.1 34.5 Z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="title">PORTAIL FORMATION TPG</h1>
+            <div class="subtitle">Gestion Technique</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="no-print">
+        <div class="nav-grid">
+          <button id="tab-cours" class="tab-btn active" type="button" onclick="setTab('cours')">1. Organisation Cours</button>
+          <button id="tab-rails" class="tab-btn" type="button" onclick="setTab('rails')">2. Rails Glissants</button>
+          <button id="tab-tram" class="tab-btn" type="button" onclick="setTab('tram')">3. Réservation Tramway</button>
+          <button id="tab-abtb" class="tab-btn" type="button" onclick="setTab('abtb')">4. Réservation AB/TB</button>
+          <button id="tab-veh" class="tab-btn" type="button" onclick="setTab('vehicule')">5. Avarie Véhicule</button>
+          <button id="tab-avarie" class="tab-btn" type="button" onclick="setTab('avarie')">6. Annonce Avarie AB/TB</button>
+          <button id="tab-horaire" class="tab-btn" type="button" onclick="setTab('horaire')">7. Hor Conduite</button>
+          <button id="tab-annuaire" class="tab-btn" type="button" onclick="setTab('annuaire')">8. Annuaire & Formateurs</button>
+        </div>
+
+        <div style="padding:10px 16px; display:flex; justify-content:space-between; align-items:center; background:#fff; border-bottom:1px solid var(--border);">
+          <div style="font-size:13px;">Connecté(e) : <span id="sessionUser" style="color:var(--tpg-orange); font-weight:bold;"></span></div>
+          <button class="btn btn-reset" style="padding:6px 12px; min-width:auto; font-size:11px;" onclick="logout()">Déconnexion</button>
+        </div>
+      </div>
+
+      <div class="content-wrap">
+        <!-- MODULE 1 -->
+        <section id="tab-cours-content" class="tab-content active" data-tab="cours">
+          <div class="module-header"><h2>1. Organisation Cours</h2></div>
+          <div class="grid-3">
+            <div class="field">
+              <label for="c_cours">Type de cours <span class="required-star">*</span></label>
+              <select id="c_cours" onchange="updAll()" required>
+                <option value="">-- Type --</option>
+                <option value="RCT">RCT</option>
+                <option value="600T">600 Tramway</option>
+                <option value="600TB">600 Trolleybus</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c_nb">Nombre de personnes <span class="required-star">*</span></label>
+              <select id="c_nb" onchange="updAll()">
+                <option value="">-- Nombre --</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c_form">Formateur <span class="required-star">*</span></label>
+              <select id="c_form" class="f-complete" onchange="updAll()"></select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="c_d1">Date début</label><input type="date" id="c_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="c_d2">Date fin</label><input type="date" id="c_d2" onchange="updAll()"/></div>
+          </div>
+          <div class="field"><label for="c_rem">Remarques</label><textarea id="c_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-cours"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('cours')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailCours()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 2 -->
+        <section id="tab-rails-content" class="tab-content" data-tab="rails">
+          <div class="module-header"><h2>2. Rails Glissants</h2></div>
+          <div class="grid-3">
+            <div class="field"><label for="r_form">Formateur <span class="required-star">*</span></label><select id="r_form" class="f-rails" onchange="updAll()"></select></div>
+            <div class="field"><label for="r_d1">Date début</label><input type="date" id="r_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="r_d2">Date fin</label><input type="date" id="r_d2" onchange="updAll()"/></div>
+          </div>
+          <div class="field"><label for="r_rem">Remarques</label><textarea id="r_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-rails"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('rails')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailRails()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 3 -->
+        <section id="tab-tram-content" class="tab-content" data-tab="tram">
+          <div class="module-header"><h2>3. Réservation Tramway</h2></div>
+          <div class="grid-3">
+            <div class="field"><label for="t_f">Formateur <span class="required-star">*</span></label><select id="t_f" class="f-complete" onchange="updAll()"></select></div>
+            <div class="field">
+              <label for="t_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="t_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="t_d1">Date début</label><input type="date" id="t_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="t_d2">Date fin</label><input type="date" id="t_d2" onchange="updAll()"/></div>
+          </div>
+          <div class="category-title">VÉHICULES</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="t_veh" value="Bombardier" onchange="updAll()"> Bombardier</label>
+            <label><input type="checkbox" name="t_veh" value="Bombardier + Bombardier" onchange="updAll()"> Bombardier + Bombardier</label>
+            <label><input type="checkbox" name="t_veh" value="Tango" onchange="updAll()"> Tango</label>
+            <label><input type="checkbox" name="t_veh" value="Tango + Tango" onchange="updAll()"> Tango + Tango</label>
+            <label><input type="checkbox" name="t_veh" value="DAV convoi" onchange="updAll()"> DAV convoi</label>
+            <label><input type="checkbox" name="t_veh" value="DAV convoi + DAV convoi" onchange="updAll()"> DAV convoi + DAV convoi</label>
+            <label><input type="checkbox" name="t_veh" value="DAV03" onchange="updAll()"> DAV03</label>
+          </div>
+          <div class="field" style="margin-top:8px;"><label for="t_rem">Remarques</label><textarea id="t_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-tram"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('tram')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailTram()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 4 -->
+        <section id="tab-abtb-content" class="tab-content" data-tab="abtb">
+          <div class="module-header"><h2>4. Réservation AB/TB</h2></div>
+          <div class="grid-3">
+            <div class="field"><label for="a_f">Formateur <span class="required-star">*</span></label><select id="a_f" class="f-complete" onchange="updAll()"></select></div>
+            <div class="field">
+              <label for="a_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="a_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+                <option value="Jonction">Jonction</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="a_d1">Date début</label><input type="date" id="a_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="a_d2">Date fin</label><input type="date" id="a_d2" onchange="updAll()"/></div>
+          </div>
+          <div class="category-title">Autobus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="a_ab" value="Hess AB" onchange="updAll()"> Hess AB</label>
+            <label><input type="checkbox" name="a_ab" value="Mercedes AB" onchange="updAll()"> Mercedes AB</label>
+            <label><input type="checkbox" name="a_ab" value="ExquiCity" onchange="updAll()"> ExquiCity</label>
+          </div>
+          <div class="category-title">Trolleybus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="a_tb" value="Hess TBA" onchange="updAll()"> Hess TBA</label>
+            <label><input type="checkbox" name="a_tb" value="Hess TBAA" onchange="updAll()"> Hess TBAA</label>
+            <label><input type="checkbox" name="a_tb" value="ExquiCity" onchange="updAll()"> ExquiCity</label>
+          </div>
+          <div class="field" style="margin-top:8px;"><label for="a_rem">Remarques</label><textarea id="a_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-abtb"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('abtb')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailAbtb()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 5 -->
+        <section id="tab-vehicule-content" class="tab-content" data-tab="vehicule">
+          <div class="module-header"><h2>5. Avarie Véhicule de Service</h2></div>
+          <div class="grid-3">
+            <div class="field"><label for="av_form">Formateur <span class="required-star">*</span></label><select id="av_form" class="f-complete" onchange="updAll()"></select></div>
+            <div class="field"><label for="av_d1">Date début</label><input type="date" id="av_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="av_d2">Date fin</label><input type="date" id="av_d2" onchange="updAll()"/></div>
+          </div>
+          
+          <div class="category-title">Véhicule léger</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="v_service" value="3001 - Citroën Space Tourer" onchange="updAll()"> 3001 - Citroën Space Tourer</label>
+            <label><input type="checkbox" name="v_service" value="3002 - Citroën Space Tourer" onchange="updAll()"> 3002 - Citroën Space Tourer</label>
+            <label><input type="checkbox" name="v_service" value="1070 - Mercedes Vito" onchange="updAll()"> 1070 - Mercedes Vito</label>
+          </div>
+
+          <div class="category-title">Autobus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="v_ab" value="AB 535" onchange="updAll()"> AB 535</label>
+            <label><input type="checkbox" name="v_ab" value="AB 536" onchange="updAll()"> AB 536</label>
+            <label><input type="checkbox" name="v_ab" value="AB 537" onchange="updAll()"> AB 537</label>
+            <label><input type="checkbox" name="v_ab" value="AB 538" onchange="updAll()"> AB 538</label>
+            <label><input type="checkbox" name="v_ab" value="AB 539" onchange="updAll()"> AB 539</label>
+            <label><input type="checkbox" name="v_ab" value="AB 540" onchange="updAll()"> AB 540</label>
+            <label><input type="checkbox" name="v_ab" value="AB 541" onchange="updAll()"> AB 541</label>
+            <label><input type="checkbox" name="v_ab" value="AB 542" onchange="updAll()"> AB 542</label>
+          </div>
+
+          <div class="category-title">Trolleybus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="v_tb" value="TB 760" onchange="updAll()"> TB 760</label>
+            <label><input type="checkbox" name="v_tb" value="TB 766" onchange="updAll()"> TB 766</label>
+            <label><input type="checkbox" name="v_tb" value="TB 1636" onchange="updAll()"> TB 1636</label>
+          </div>
+
+          <div class="field" style="margin-top:8px;"><label for="av_rem">Remarques</label><textarea id="av_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-avarie"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('vehicule')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailVehicule()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 6 -->
+        <section id="tab-avarie-content" class="tab-content" data-tab="avarie">
+          <div class="module-header"><h2>6. Annonce Avarie AB / TB</h2></div>
+          <div class="grid-3">
+            <div class="field"><label for="av2_form">Formateur <span class="required-star">*</span></label><select id="av2_form" class="f-complete" onchange="updAll()"></select></div>
+            <div class="field">
+              <label for="av2_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="av2_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+                <option value="Jonction">Jonction</option>
+              </select>
+            </div>
+            <div class="field"><label for="av2_veh">N° véhicule <span class="required-star">*</span></label><input id="av2_veh" placeholder="Ex: AB 123" oninput="updAll()"/></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="av2_d1">Date début</label><input type="date" id="av2_d1" onchange="updAll()"/></div>
+            <div class="field"><label for="av2_d2">Date fin</label><input type="date" id="av2_d2" onchange="updAll()"/></div>
+          </div>
+          <div class="field"><label for="av2_rem">Remarques</label><textarea id="av2_rem" rows="2" oninput="updAll()"></textarea></div>
+          <div class="preview-box" id="pre-avarie2"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('avarie')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailAvarie2()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 7 -->
+        <section id="tab-horaire-content" class="tab-content" data-tab="horaire">
+          <div class="module-header"><h2>7. Hor Conduite</h2></div>
+          <div class="grid-2">
+            <div class="field"><label for="h_form">Formateur <span class="required-star">*</span></label><select id="h_form" class="f-complete" onchange="updAll()"></select></div>
+            <div class="field"><label for="h_d1">Date</label><input type="date" id="h_d1" onchange="updAll()"/></div>
+          </div>
+          <div class="preview-box" id="pre-horaire"></div>
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" onclick="resetTab('horaire')">Vider</button>
+            <button class="btn btn-print" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" onclick="mailHoraire()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 8 : ANNUAIRE & GESTION DES FORMATEURS -->
+        <section id="tab-annuaire-content" class="tab-content" data-tab="annuaire">
+          <div class="module-header"><h2>8. Annuaire & Gestion des Formateurs TPG</h2></div>
+          
+          <!-- Formulaire d'ajout -->
+          <div class="add-form-box no-print">
+            <h3 style="margin:0 0 10px 0; font-size:15px; color:var(--tpg-orange);">Ajouter un nouveau formateur</h3>
+            <div class="grid-3">
+              <div class="field"><label for="new_nom">Nom & Prénom</label><input id="new_nom" placeholder="Ex: Jean DUPONT"/></div>
+              <div class="field"><label for="new_email">E-mail TPG</label><input id="new_email" placeholder="dupont.j@tpg.ch"/></div>
+              <div class="field"><label for="new_mobile">Portable</label><input id="new_mobile" placeholder="+41 79 000 00 00"/></div>
+            </div>
+            <button class="btn btn-mail" style="min-width:auto; padding:8px 16px;" onclick="ajouterFormateur()">+ Ajouter à la liste</button>
+          </div>
+
+          <div class="grid-2 no-print" style="margin-bottom:12px;">
+            <div class="field">
+              <label for="searchAnnuaire">Rechercher un formateur</label>
+              <input type="text" id="searchAnnuaire" placeholder="Nom, e-mail, mobile..." oninput="filtrerAnnuaire()"/>
+            </div>
+            <div style="display:flex; align-items:flex-end; padding-bottom:12px; font-size:13px; color:var(--muted);">
+              Les modifications ou ajouts mettent à jour automatiquement l'application.
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom & Prénom</th>
+                  <th>Adresse E-mail TPG</th>
+                  <th>Numéro Portable</th>
+                  <th class="no-print" style="width:160px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="annuaireTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* DONNÉES ET ÉTAT DES FORMATEURS */
+    let dbFormateurs = [
+      { id: 1, nom: "Abdel Aziz AGGOUNE", email: "aggoune.a@tpg.ch", mobile: "+41 79 101 23 45" },
+      { id: 2, nom: "Ailton NERI DOS SANTOS JUNIOR", email: "neri.a@tpg.ch", mobile: "+41 79 102 34 56" },
+      { id: 3, nom: "Angelino RIBEIRO MONTEIRO", email: "monteiro.a@tpg.ch", mobile: "+41 79 103 45 67" },
+      { id: 4, nom: "Angelo CEPEDA", email: "cepeda.a@tpg.ch", mobile: "+41 79 104 56 78" },
+      { id: 5, nom: "Anis MENSI", email: "mensi.a@tpg.ch", mobile: "+41 79 105 67 89" },
+      { id: 6, nom: "Arvid LEPPIN", email: "leppin.a@tpg.ch", mobile: "+41 79 106 78 90" },
+      { id: 7, nom: "Astrid ANNEN", email: "annen.a@tpg.ch", mobile: "+41 79 107 89 01" },
+      { id: 8, nom: "Benoît THEVENIN", email: "thevenin.b@tpg.ch", mobile: "+41 79 108 90 12" },
+      { id: 9, nom: "Bruno CIMAROSSA", email: "cimarossa.b@tpg.ch", mobile: "+41 79 109 01 23" },
+      { id: 10, nom: "Carlos MARTINS", email: "martins.c@tpg.ch", mobile: "+41 79 110 12 34" },
+      { id: 11, nom: "Christian NOVERRAZ", email: "noverrazchristian@tpg.ch", mobile: "+41 79 600 01 87" },
+      { id: 12, nom: "David ABELLANEDA", email: "abellaneda.d@tpg.ch", mobile: "+41 79 112 34 56" },
+      { id: 13, nom: "Fabio ALEMANNO", email: "alemanno.f@tpg.ch", mobile: "+41 79 113 45 67" },
+      { id: 14, nom: "Fitim ISENI", email: "iseni.f@tpg.ch", mobile: "+41 79 114 56 78" },
+      { id: 15, nom: "Francesco DE SABATO", email: "desabato.f@tpg.ch", mobile: "+41 79 115 67 89" },
+      { id: 16, nom: "Gianpiero SEBASTIANELLI", email: "sebastianelli.g@tpg.ch", mobile: "+41 79 117 89 01" },
+      { id: 17, nom: "Grégory DESPRES", email: "despres.g@tpg.ch", mobile: "+41 79 118 90 12" },
+      { id: 18, nom: "Ilyes BENTAIBA", email: "bentaiba.i@tpg.ch", mobile: "+41 79 119 01 23" },
+      { id: 19, nom: "Jacques KRIEG", email: "krieg.j@tpg.ch", mobile: "+41 79 120 12 34" },
+      { id: 20, nom: "James SCOTTON", email: "scotton.j@tpg.ch", mobile: "+41 79 121 23 45" },
+      { id: 21, nom: "Jérôme CHESSEL", email: "chessel.j@tpg.ch", mobile: "+41 79 122 34 56" },
+      { id: 22, nom: "José MARTIN", email: "martin.j@tpg.ch", mobile: "+41 79 123 45 67" },
+      { id: 23, nom: "José Manuel MOREIRA", email: "moreira.j@tpg.ch", mobile: "+41 79 124 56 78" },
+      { id: 24, nom: "José-Antonio PEREZ", email: "perez.j@tpg.ch", mobile: "+41 79 125 67 89" },
+      { id: 25, nom: "Joseph FOTI", email: "foti.j@tpg.ch", mobile: "+41 79 126 78 90" },
+      { id: 26, nom: "Luis Fernando GARCIA DAZA", email: "garciadaza.l@tpg.ch", mobile: "+41 79 127 89 01" },
+      { id: 27, nom: "Raffaele CAIOLA", email: "caiola.r@tpg.ch", mobile: "+41 79 128 90 12" },
+      { id: 28, nom: "Sami ESSEBBANI", email: "essebbani.s@tpg.ch", mobile: "+41 79 129 01 23" },
+      { id: 29, nom: "Stanislas RUCKEBUSCH", email: "ruckebusch.s@tpg.ch", mobile: "+41 79 130 12 34" }
+    ];
+
+    const fRails = [
+      "Angelo CEPEDA", "Christian NOVERRAZ", "Fabio ALEMANNO", "Gianpiero SEBASTIANELLI",
+      "James SCOTTON", "Jérôme CHESSEL", "José MARTIN", "José-Antonio PEREZ",
+      "Raffaele CAIOLA", "Sami ESSEBBANI", "Luis Fernando GARCIA DAZA"
+    ];
+
+    const MERCI = "\n\nL'équipe formation vous remercie par avance pour votre collaboration et reste à votre disposition pour toute information complémentaire.\n\nCordialement,";
+
+    /* FONCTIONS DE VALIDATION */
+    function validerEmail(email) {
+      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(String(email).trim().toLowerCase());
+    }
+
+    function validerEtFormaterMobile(mobile) {
+      let clean = String(mobile).replace(/[^\d+]/g, '');
+      if (clean.startsWith('07')) { clean = '+41' + clean.substring(1); }
+      const estValide = /^\+417[5-9]\d{7}$/.test(clean);
+      let formate = clean;
+      if (estValide) {
+        formate = `${clean.substring(0, 3)} ${clean.substring(3, 5)} ${clean.substring(5, 8)} ${clean.substring(8, 10)} ${clean.substring(10, 12)}`;
+      }
+      return { estValide, formate };
+    }
+
+    /* GESTION DE L'ANNUAIRE (EDITION, AJOUT, SUPPRESSION) */
+    function afficherAnnuaire(liste) {
+      const tbody = document.getElementById('annuaireTableBody');
+      tbody.innerHTML = '';
+
+      liste.forEach(f => {
+        const emailOk = validerEmail(f.email);
+        const { estValide: mobileOk, formate: mobileFormate } = validerEtFormaterMobile(f.mobile);
+
+        const row = document.createElement('tr');
+        row.id = `formateur-row-${f.id}`;
+        row.innerHTML = `
+          <td><span class="view-mode">${f.nom}</span><input class="edit-mode" style="display:none;" id="edit-nom-${f.id}" value="${f.nom}"/></td>
+          <td>
+            <span class="view-mode"><a href="mailto:${f.email}">${f.email}</a> <span class="badge ${emailOk ? 'badge-success' : 'badge-danger'}">${emailOk ? '✓' : '✗'}</span></span>
+            <input class="edit-mode" style="display:none;" id="edit-email-${f.id}" value="${f.email}"/>
+          </td>
+          <td>
+            <span class="view-mode"><a href="tel:${f.mobile.replace(/\s+/g, '')}">${mobileFormate}</a> <span class="badge ${mobileOk ? 'badge-success' : 'badge-danger'}">${mobileOk ? '✓' : '✗'}</span></span>
+            <input class="edit-mode" style="display:none;" id="edit-mobile-${f.id}" value="${f.mobile}"/>
+          </td>
+          <td class="no-print">
+            <button class="btn btn-action view-mode" onclick="activerEdition(${f.id})">Éditer</button>
+            <button class="btn btn-danger view-mode" onclick="supprimerFormateur(${f.id})">Suppr.</button>
+            <button class="btn btn-mail edit-mode" style="display:none; min-width:auto; padding:6px 10px; font-size:11px;" onclick="sauvegarderFormateur(${f.id})">Enregistrer</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function activerEdition(id) {
+      const row = document.getElementById(`formateur-row-${id}`);
+      row.querySelectorAll('.view-mode').forEach(e => e.style.display = 'none');
+      row.querySelectorAll('.edit-mode').forEach(e => e.style.display = 'inline-block');
+    }
+
+    function sauvegarderFormateur(id) {
+      const f = dbFormateurs.find(item => item.id === id);
+      if(f) {
+        f.nom = document.getElementById(`edit-nom-${id}`).value.trim();
+        f.email = document.getElementById(`edit-email-${id}`).value.trim();
+        f.mobile = document.getElementById(`edit-mobile-${id}`).value.trim();
+        initFormateurs();
+        afficherAnnuaire(dbFormateurs);
+        updAll();
+      }
+    }
+
+    function ajouterFormateur() {
+      const nom = document.getElementById('new_nom').value.trim();
+      const email = document.getElementById('new_email').value.trim();
+      const mobile = document.getElementById('new_mobile').value.trim();
+
+      if(!nom) { alert('Veuillez renseigner un nom.'); return; }
+
+      const newId = Date.now();
+      dbFormateurs.push({ id: newId, nom, email, mobile });
+      
+      document.getElementById('new_nom').value = '';
+      document.getElementById('new_email').value = '';
+      document.getElementById('new_mobile').value = '';
+
+      initFormateurs();
+      afficherAnnuaire(dbFormateurs);
+      updAll();
+    }
+
+    function supprimerFormateur(id) {
+      if(confirm('Voulez-vous vraiment supprimer ce formateur ?')) {
+        dbFormateurs = dbFormateurs.filter(f => f.id !== id);
+        initFormateurs();
+        afficherAnnuaire(dbFormateurs);
+        updAll();
+      }
+    }
+
+    function filtrerAnnuaire() {
+      const q = document.getElementById('searchAnnuaire').value.toLowerCase();
+      const filtre = dbFormateurs.filter(f => 
+        f.nom.toLowerCase().includes(q) || 
+        f.email.toLowerCase().includes(q) || 
+        f.mobile.includes(q)
+      );
+      afficherAnnuaire(filtre);
+    }
+
+    /* UTILS & PREVIEWS */
+    function fmt(dateStr) {
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ""))) return "___";
+      const [y,m,d] = String(dateStr).split("-").map(Number);
+      return `${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
+    }
+
+    function getCheckedValues(name) {
+      return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(e => e.value);
+    }
+
+    function setPreview(id, text) {
+      const el = document.getElementById(id);
+      el.dataset.plainText = text;
+      el.innerText = text;
+    }
+
+    function updAll() {
+      const f1 = document.getElementById('c_form').value || "___";
+      const d1 = fmt(document.getElementById('c_d1').value);
+      const d2 = fmt(document.getElementById('c_d2').value);
+      const rem = document.getElementById('c_rem').value || "Aucune";
+
+      // 1. Cours
+      const type = document.getElementById('c_cours').value;
+      const nb = document.getElementById('c_nb').value || "___";
+      setPreview('pre-cours', `Bonjour,\n\nDans le cadre de nos besoins en formation, nous souhaiterions planifier le cours ${type || '___'} pour ${nb} personne(s) :\n\n• Dates : du ${d1} au ${d2}\n• Formateur : ${f1}\n• Remarques : ${rem}${MERCI}`);
+
+      // 2. Rails
+      setPreview('pre-rails', `Bonjour,\n\nRéservation de rails glissants :\n\n• Dates : du ${fmt(document.getElementById('r_d1').value)} au ${fmt(document.getElementById('r_d2').value)}\n• Formateur : ${document.getElementById('r_form').value || "___"}\n• Remarques : ${document.getElementById('r_rem').value || "Aucune"}${MERCI}`);
+
+      // 3. Tram
+      const tVeh = getCheckedValues('t_veh').join(', ') || "___";
+      setPreview('pre-tram', `Bonjour,\n\nRéservation tramway au dépôt de ${document.getElementById('t_depot').value || "___"} :\n\n• Dates : du ${fmt(document.getElementById('t_d1').value)} au ${fmt(document.getElementById('t_d2').value)}\n• Formateur : ${document.getElementById('t_f').value || "___"}\n• Véhicules : ${tVeh}\n• Remarques : ${document.getElementById('t_rem').value || "Aucune"}${MERCI}`);
+
+      // 4. AB/TB
+      const ab = getCheckedValues('a_ab');
+      const tb = getCheckedValues('a_tb');
+      let vehs = [...ab, ...tb].join(', ') || "___";
+      setPreview('pre-abtb', `Bonjour,\n\nRéservation AB/TB au dépôt de ${document.getElementById('a_depot').value || "___"} :\n\n• Dates : du ${fmt(document.getElementById('a_d1').value)} au ${fmt(document.getElementById('a_d2').value)}\n• Formateur : ${document.getElementById('a_f').value || "___"}\n• Véhicules : ${vehs}\n• Remarques : ${document.getElementById('a_rem').value || "Aucune"}${MERCI}`);
+
+      // 5. Avarie
+      const vl = getCheckedValues('v_service');
+      const vab = getCheckedValues('v_ab');
+      const vtb = getCheckedValues('v_tb');
+      let cats = [];
+      if(vl.length) cats.push(`Véhicule léger : ${vl.join(', ')}`);
+      if(vab.length) cats.push(`Autobus : ${vab.join(', ')}`);
+      if(vtb.length) cats.push(`Trolleybus : ${vtb.join(', ')}`);
+      setPreview('pre-avarie', `Bonjour,\n\nAnnonce d'avarie :\n\n• Formateur : ${document.getElementById('av_form').value || "___"}\n• Véhicules : ${cats.join(' | ') || "___"}\n• Dates : du ${fmt(document.getElementById('av_d1').value)} au ${fmt(document.getElementById('av_d2').value)}\n• Remarques : ${document.getElementById('av_rem').value || "Aucune"}${MERCI}`);
+
+      // 6. Annonce Avarie
+      setPreview('pre-avarie2', `Bonjour,\n\nAnnonce d'avarie AB/TB :\n\n• Formateur : ${document.getElementById('av2_form').value || "___"}\n• Dépôt : ${document.getElementById('av2_depot').value || "___"}\n• N° Véhicule : ${document.getElementById('av2_veh').value || "___"}\n• Dates : du ${fmt(document.getElementById('av2_d1').value)} au ${fmt(document.getElementById('av2_d2').value)}\n• Remarques : ${document.getElementById('av2_rem').value || "Aucune"}${MERCI}`);
+
+      // 7. Hor Conduite
+      setPreview('pre-horaire', `Bonjour,\n\nJe vous informe que j'effectuerai un horaire conduite le ${fmt(document.getElementById('h_d1').value)}.\n\nFormateur : ${document.getElementById('h_form').value || "___"}${MERCI}`);
+    }
+
+    function setTab(tabKey) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+      
+      const btn = document.getElementById(`tab-${tabKey === 'vehicule' ? 'veh' : tabKey}`);
+      if(btn) btn.classList.add('active');
+      
+      const content = document.querySelector(`[data-tab="${tabKey}"]`);
+      if(content) content.classList.add('active');
+    }
+
+    function initFormateurs() {
+      const selects = document.querySelectorAll('.f-complete');
+      selects.forEach(sel => {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Formateur --</option>';
+        dbFormateurs.forEach(f => sel.add(new Option(f.nom, f.nom)));
+        sel.value = currentVal;
+      });
+
+      const selRails = document.querySelectorAll('.f-rails');
+      selRails.forEach(sel => {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- Formateur --</option>';
+        fRails.forEach(f => sel.add(new Option(f, f)));
+        sel.value = currentVal;
+      });
+    }
+
+    function resetTab(tabKey) {
+      const content = document.querySelector(`[data-tab="${tabKey}"]`);
+      if(!content) return;
+      content.querySelectorAll('input, select, textarea').forEach(e => {
+        if(e.type === 'checkbox') e.checked = false;
+        else e.value = '';
+      });
+      updAll();
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const p = document.getElementById("prenom").value.trim();
+      const n = document.getElementById("nom").value.trim();
+      
+      document.getElementById("sessionUser").textContent = `${p} ${n}`;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      initFormateurs();
+      afficherAnnuaire(dbFormateurs);
+      updAll();
+    });
+
+    function logout() {
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('loginOverlay').style.display = 'flex';
+      document.getElementById('loginForm').reset();
+    }
+  </script>
+</body>
+</html>

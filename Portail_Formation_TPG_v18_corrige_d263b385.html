@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PORTAIL FORMATION TPG</title>
+
+  <style>
+    :root{
+      --tpg-orange:#FD5312;
+      --bg:#f0f0f0;
+      --panel:#ffffff;
+      --border:#e5e7eb;
+      --text:#111827;
+      --muted:#6b7280;
+      --blue-print:#008CBE;
+      --gray-reset:#8C8C8E;
+      --focus: rgba(253,83,18,.25);
+      --danger:#dc2626;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* --- Auth --- */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background: rgba(249,250,251,.95);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:999;
+    }
+    .modal{
+      width:100%;
+      max-width:420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius:10px;
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    .modal h1{
+      margin:0 0 12px 0;
+      font-size:20px;
+      font-weight:900;
+    }
+    label{
+      display:block;
+      font-weight:700;
+      font-size:13.5px;
+      margin-bottom:6px;
+    }
+    input, select, textarea{
+      width:100%;
+      border:1px solid var(--border);
+      background:#fff;
+      padding:10px 10px;
+      border-radius:8px;
+      font-size:14px;
+      outline:none;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(253,83,18,.55);
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+    .field-error{
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 4px rgba(220,38,38,.15) !important;
+    }
+    .error-text{
+      color: var(--danger);
+      font-size: 13px;
+      margin: 10px 0 0 0;
+    }
+
+    /* --- Header --- */
+    .topbar{
+      background: var(--tpg-orange);
+      color:#fff;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-radius:12px 12px 0 0;
+    }
+    .topbar .title{
+      font-family: Helvetica, Arial, sans-serif;
+      font-weight: 950;
+      letter-spacing:-0.03em;
+      font-size: 22px;
+      text-transform: uppercase;
+      margin:0;
+    }
+    .topbar .subtitle{
+      font-size:12px;
+      font-weight:800;
+      opacity:.92;
+      text-transform: uppercase;
+      margin:0;
+    }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius:12px;
+      overflow:hidden;
+      margin-top: 12px;
+    }
+
+    /* --- Nav tabs --- */
+    .nav-grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+      background:#f8f8f8;
+    }
+    .nav-row-2{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--border);
+      background:#f8f8f8;
+    }
+    .tab-btn{
+      border: none;
+      background: transparent;
+      padding: 12px 10px;
+      text-align:left;
+      cursor:pointer;
+      color:#4b5563;
+      font-weight:700;
+      font-size:13.5px;
+      border-bottom: 4px solid transparent;
+      transition: all .15s ease;
+      min-height: 52px;
+    }
+    .tab-btn:hover{
+      background:#fff;
+      color: var(--tpg-orange);
+    }
+    .tab-btn.active{
+      background:#fff;
+      color: var(--tpg-orange);
+      border-bottom-color: var(--tpg-orange);
+    }
+
+    .required-star{
+      color: var(--danger);
+      font-weight:900;
+      margin-left:2px;
+    }
+
+    /* Mobile accordion nav */
+    .nav-accordion{
+      display:none;
+      background:#f8f8f8;
+      border-bottom:1px solid var(--border);
+    }
+    .acc-item{
+      border-top:1px solid var(--border);
+    }
+    .acc-header{
+      width:100%;
+      text-align:left;
+      border:none;
+      background:transparent;
+      padding:12px 14px;
+      cursor:pointer;
+      font-weight:800;
+      color:#374151;
+    }
+    .acc-header.active{
+      color: var(--tpg-orange);
+    }
+    .acc-body{
+      display:none;
+      padding: 6px 12px 12px 12px;
+    }
+    .acc-body button{
+      width:100%;
+      text-align:left;
+      border:1px solid var(--border);
+      background:#fff;
+      border-radius:10px;
+      padding:10px 12px;
+      margin-top:8px;
+      cursor:pointer;
+      font-weight:800;
+      color:#374151;
+    }
+    .acc-body button.active{
+      color: var(--tpg-orange);
+      border-color: rgba(253,83,18,.6);
+      box-shadow: 0 0 0 4px rgba(253,83,18,.12);
+    }
+
+    /* --- Content --- */
+    .content-wrap{
+      padding: 16px;
+    }
+
+    .module-header{
+      border-left: 6px solid var(--tpg-orange);
+      padding-left: 10px;
+      margin: 0 0 12px 0;
+    }
+    .module-header h2{
+      margin:0;
+      font-size:18px;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+      color: var(--tpg-orange);
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .grid-3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .field{
+      margin-bottom: 12px;
+    }
+    .hint{
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .category-title{
+      margin: 16px 0 8px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      font-weight:900;
+      color:#111827;
+      letter-spacing:.02em;
+    }
+
+    .checkbox-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 8px 12px;
+      padding: 12px;
+      background:#f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .checkbox-grid label{
+      margin:0;
+      font-weight:650;
+      font-size: 13.8px;
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      color:#111827;
+      line-height: 1.35;
+      cursor:pointer;
+    }
+    .checkbox-grid input{
+      width:18px; height:18px;
+      margin-top:2px;
+      accent-color: var(--tpg-orange);
+    }
+
+    .btnbar{
+      display:flex;
+      gap:10px;
+      margin: 16px 0 10px 0;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 13px;
+      cursor:pointer;
+      color:#fff;
+      transition: all .15s ease;
+      min-width: 150px;
+    }
+    .btn-reset{ background: var(--gray-reset); }
+    .btn-print{ background: var(--blue-print); }
+    .btn-mail{ background: var(--tpg-orange); flex:1; min-width: 220px; }
+    .btn:hover{ filter: brightness(1.02); transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0px); }
+
+    .preview-box{
+      border: 3px solid var(--tpg-orange);
+      padding: 18px;
+      border-radius: 10px;
+      background:#fff;
+      line-height: 1.6;
+      margin-top: 12px;
+      min-height: 260px;
+      white-space: pre-wrap;
+      font-size: 14.5px;
+    }
+    .preview-box b{
+      font-weight: 950;
+      color:#000;
+    }
+
+    .message-box{
+      display:none;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 12px;
+      background:#fff;
+      margin-top:10px;
+      font-size:13.5px;
+      color:#111827;
+    }
+    .message-box.show{ display:block; }
+
+    /* Print */
+    @media print{
+      body{ background:#fff; }
+      .no-print{ display:none !important; }
+      .container{ padding:0; }
+      .panel{ border: none; }
+      .preview-box{
+        border: 2px solid var(--tpg-orange) !important;
+        border-radius:0;
+        min-height: 0;
+        box-shadow:none;
+      }
+      .topbar{ display:none; }
+      .nav-accordion, .nav-grid{ display:none !important; }
+    }
+
+    @media (max-width: 980px){
+      .nav-grid{ display:none; }
+      .nav-accordion{ display:block; }
+      .grid-3{ grid-template-columns: 1fr; }
+      .grid-2{ grid-template-columns: 1fr; }
+    }
+
+    .tab-content{ display:none; }
+    .tab-content.active{ display:block; }
+  </style>
+</head>
+
+<body>
+  <!-- Auth modal -->
+  <div id="loginOverlay" class="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <h1 id="loginTitle">Accès au portail</h1>
+
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label for="prenom">Prénom</label>
+          <input id="prenom" required placeholder="Votre prénom" />
+        </div>
+        <div class="field">
+          <label for="nom">Nom</label>
+          <input id="nom" required placeholder="Votre nom" />
+        </div>
+
+        <div id="loginError" class="error-text" style="display:none;">Nom et prénom non reconnus.</div>
+
+        <div style="margin-top:14px;">
+          <button class="btn btn-mail" type="submit" style="width:100%;">Entrer</button>
+          <p style="margin:10px 0 0 0; font-size:12.5px; color:var(--muted);">
+            Identification locale uniquement (non sécurisée).
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- App shell -->
+  <div id="app" class="container" style="display:none;">
+    <div class="panel" style="overflow:visible;">
+      <div class="topbar">
+        <h1 class="title">PORTAIL FORMATION TPG</h1>
+        <div class="subtitle">Gestion Technique</div>
+      </div>
+
+      <div class="no-print">
+        <!-- Desktop tabs -->
+        <div class="nav-grid">
+          <button id="tab-cours" class="tab-btn active" type="button" onclick="setTab('cours')">1. Organisation Cours</button>
+          <button id="tab-rails" class="tab-btn" type="button" onclick="setTab('rails')">2. Rails Glissants</button>
+          <button id="tab-tram" class="tab-btn" type="button" onclick="setTab('tram')">3. Réservation Tramway</button>
+          <button id="tab-abtb" class="tab-btn" type="button" onclick="setTab('abtb')">4. Réservation AB/TB</button>
+        </div>
+        <div class="nav-row-2">
+          <button id="tab-veh" class="tab-btn" type="button" onclick="setTab('vehicule')">5. Avarie “véhicule de service”</button>
+          <button id="tab-avarie" class="tab-btn" type="button" onclick="setTab('avarie')">6. Annonce Avarie AB / TB</button>
+          <button id="tab-horaire" class="tab-btn" type="button" onclick="setTab('horaire')">7. Hor Conduite</button>
+        </div>
+
+        <!-- Mobile accordion -->
+        <div class="nav-accordion">
+          <div class="acc-item">
+            <button class="acc-header active" type="button" onclick="toggleAcc('acc1')">Modules 1–3</button>
+            <div class="acc-body" id="acc1">
+              <button type="button" class="nav-btn" onclick="setTab('cours')">1. Organisation Cours</button>
+              <button type="button" class="nav-btn" onclick="setTab('rails')">2. Rails Glissants</button>
+              <button type="button" class="nav-btn" onclick="setTab('tram')">3. Réservation Tramway</button>
+            </div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-header" type="button" onclick="toggleAcc('acc2')">Modules 4–6</button>
+            <div class="acc-body" id="acc2">
+              <button type="button" onclick="setTab('abtb')">4. Réservation AB/TB</button>
+              <button type="button" onclick="setTab('vehicule')">5. Avarie “véhicule de service”</button>
+              <button type="button" onclick="setTab('avarie')">6. Annonce Avarie AB / TB</button>
+            </div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-header" type="button" onclick="toggleAcc('acc3')">Module 7</button>
+            <div class="acc-body" id="acc3">
+              <button type="button" onclick="setTab('horaire')">7. Hor Conduite</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 12px 16px 0 16px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; color:#374151; font-size:13px;">
+            Connecté en tant que : <span id="sessionUser" style="color:var(--tpg-orange); font-weight:950;"></span>
+          </div>
+          <button class="btn btn-reset" type="button" onclick="logout()">Déconnexion</button>
+        </div>
+      </div>
+
+      <div class="content-wrap">
+        <!-- MODULE 1 -->
+        <section id="tab-cours-content" class="tab-content active" data-tab="cours" aria-label="Organisation Cours">
+          <div class="module-header">
+            <h2>1. Organisation Cours</h2>
+          </div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="c_cours">Type de cours <span class="required-star">*</span></label>
+              <select id="c_cours" onchange="updAll()" required>
+                <option value="">-- Type --</option>
+                <option value="RCT">RCT</option>
+                <option value="600T">600 Tramway</option>
+                <option value="600TB">600 Trolleybus</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c_nb">Nombre de personnes <span class="required-star">*</span></label>
+              <select id="c_nb" onchange="updAll()">
+                <option value="">-- Nombre --</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+              <div class="hint">Doit être entre 1 et 10.</div>
+            </div>
+            <div class="field">
+              <label for="c_form">Formateur <span class="required-star">*</span></label>
+              <select id="c_form" class="f-complete" onchange="updAll()"></select>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label for="c_d1">Date début</label>
+              <input type="date" id="c_d1" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label for="c_d2">Date fin</label>
+              <input type="date" id="c_d2" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="c_rem">Remarques</label>
+            <textarea id="c_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-cours" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('cours')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailCours()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 2 -->
+        <section id="tab-rails-content" class="tab-content" data-tab="rails" aria-label="Rails Glissants">
+          <div class="module-header"><h2>2. Rails Glissants</h2></div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="r_form">Formateur <span class="required-star">*</span></label>
+              <select id="r_form" class="f-rails" onchange="updAll()"></select>
+            </div>
+            <div class="field">
+              <label for="r_d1">Date début</label>
+              <input type="date" id="r_d1" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label for="r_d2">Date fin</label>
+              <input type="date" id="r_d2" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="r_rem">Remarques</label>
+            <textarea id="r_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-rails" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('rails')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailRails()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 3 -->
+        <section id="tab-tram-content" class="tab-content" data-tab="tram" aria-label="Réservation Tramway">
+          <div class="module-header"><h2>3. Réservation Tramway</h2></div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="t_f">Formateur <span class="required-star">*</span></label>
+              <select id="t_f" class="f-complete" onchange="updAll()"></select>
+            </div>
+            <div class="field">
+              <label for="t_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="t_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div style="padding:10px 10px 0 0; color:var(--muted); font-size:12.5px; font-weight:800;">
+                Véhicules cochés → dans l’aperçu
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label for="t_d1">Date début</label>
+              <input type="date" id="t_d1" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label for="t_d2">Date fin</label>
+              <input type="date" id="t_d2" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="category-title">VÉHICULES</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="t_veh" value="Bombardier" onchange="updAll()"> Bombardier</label>
+            <label><input type="checkbox" name="t_veh" value="Bombardier + Bombardier" onchange="updAll()"> Bombardier + Bombardier</label>
+            <label><input type="checkbox" name="t_veh" value="Tango" onchange="updAll()"> Tango</label>
+            <label><input type="checkbox" name="t_veh" value="Tango + Tango" onchange="updAll()"> Tango + Tango</label>
+            <label><input type="checkbox" name="t_veh" value="DAV convoi" onchange="updAll()"> DAV convoi</label>
+            <label><input type="checkbox" name="t_veh" value="DAV convoi + DAV convoi" onchange="updAll()"> DAV convoi + DAV convoi</label>
+            <label><input type="checkbox" name="t_veh" value="DAV03" onchange="updAll()"> DAV03</label>
+          </div>
+
+          <div class="field">
+            <label for="t_rem">Remarques</label>
+            <textarea id="t_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-tram" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('tram')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailTram()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 4 -->
+        <section id="tab-abtb-content" class="tab-content" data-tab="abtb" aria-label="Réservation AB/TB">
+          <div class="module-header"><h2>4. Réservation AB/TB</h2></div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="a_f">Formateur <span class="required-star">*</span></label>
+              <select id="a_f" onchange="updAll()"></select>
+            </div>
+            <div class="field">
+              <label for="a_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="a_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+                <option value="Jonction">Jonction</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div style="padding:10px 10px 0 0; color:var(--muted); font-size:12.5px; font-weight:800;">
+                Choisir Autobus / Trolleybus
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label for="a_d1">Date début</label>
+              <input type="date" id="a_d1" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label for="a_d2">Date fin</label>
+              <input type="date" id="a_d2" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="category-title">Autobus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="a_ab" value="Hess AB" onchange="updAll()"> Hess AB</label>
+            <label><input type="checkbox" name="a_ab" value="Mercedes AB" onchange="updAll()"> Mercedes AB</label>
+            <label><input type="checkbox" name="a_ab" value="ExquiCity" onchange="updAll()"> ExquiCity</label>
+          </div>
+
+          <div class="category-title">Trolleybus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="a_tb" value="Hess TBA" onchange="updAll()"> Hess TBA</label>
+            <label><input type="checkbox" name="a_tb" value="Hess TBAA" onchange="updAll()"> Hess TBAA</label>
+            <label><input type="checkbox" name="a_tb" value="ExquiCity" onchange="updAll()"> ExquiCity</label>
+          </div>
+
+          <div class="field">
+            <label for="a_rem">Remarques</label>
+            <textarea id="a_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-abtb" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('abtb')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailAbtb()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 5 -->
+        <section id="tab-vehicule-content" class="tab-content" data-tab="vehicule" aria-label="Avarie véhicule de service">
+          <div class="module-header"><h2>5. Avarie “véhicule de service”</h2></div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="av_form">Formateur <span class="required-star">*</span></label>
+              <select id="av_form" onchange="updAll()"></select>
+            </div>
+            <div class="field">
+              <label for="av_d1">Date début</label>
+              <input type="date" id="av_d1" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label for="av_d2">Date fin</label>
+              <input type="date" id="av_d2" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div style="padding:10px 10px 0 0; color:var(--muted); font-size:12.5px; font-weight:800;">
+                Sélectionner les catégories de véhicules
+              </div>
+            </div>
+          </div>
+
+          <div class="category-title">Section Véhicule léger</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="v_service" value="3001 - Citroën Space Tourer" onchange="updAll()"> 3001 - Citroën Space Tourer</label>
+            <label><input type="checkbox" name="v_service" value="3002 - Citroën Space Tourer" onchange="updAll()"> 3002 - Citroën Space Tourer</label>
+            <label><input type="checkbox" name="v_service" value="1070 - Mercedes Vito" onchange="updAll()"> 1070 - Mercedes Vito</label>
+          </div>
+
+          <div class="category-title">Section Autobus</div>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="v_ab" value="AB 535" onchange="updAll()"> AB 535</label>
+            <label><input type="checkbox" name="v_ab" value="AB 536" onchange="updAll()"> AB 536</label>
+            <label><input type="checkbox" name="v_ab" value="AB 537" onchange="updAll()"> AB 537</label>
+            <label><input type="checkbox" name="v_ab" value="AB 538" onchange="updAll()"> AB 538</label>
+            <label><input type="checkbox" name="v_ab" value="AB 539" onchange="updAll()"> AB 539</label>
+            <label><input type="checkbox" name="v_ab" value="AB 540" onchange="updAll()"> AB 540</label>
+            <label><input type="checkbox" name="v_ab" value="AB 541" onchange="updAll()"> AB 541</label>
+            <label><input type="checkbox" name="v_ab" value="AB 542" onchange="updAll()"> AB 542</label>
+          </div>
+
+          <div class="category-title">Section Trolleybus (à configurer)</div>
+          <div class="checkbox-grid" id="tbGrid">
+            <!-- ⚠️ Ambiguïté #3 : aucune liste v_tb n’apparaît dans l’extrait HTML fourni.
+                 Ici on laisse vide par défaut pour éviter d’inventer. -->
+            <div style="grid-column:1/-1; color:var(--muted); font-weight:700;">
+              Aucune option TB configurée pour le moment.
+              <div style="margin-top:6px; font-size:12.5px;">
+                Pour activer, renseigner la liste TB dans <code>CONFIG.vtbOptions</code>.
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="av_rem">Remarques</label>
+            <textarea id="av_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-avarie" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('vehicule')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailVehicule()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 6 -->
+        <section id="tab-avarie-content" class="tab-content" data-tab="avarie" aria-label="Annonce Avarie AB / TB">
+          <div class="module-header"><h2>6. Annonce Avarie AB / TB</h2></div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="av2_form">Formateur <span class="required-star">*</span></label>
+              <select id="av2_form" onchange="updAll()"></select>
+            </div>
+            <div class="field">
+              <label for="av2_depot">Dépôt <span class="required-star">*</span></label>
+              <select id="av2_depot" onchange="updAll()">
+                <option value="">-- Dépôt --</option>
+                <option value="Bachet">Bachet</option>
+                <option value="En-Chardon">En-Chardon</option>
+                <option value="Jonction">Jonction</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="av2_veh">N° véhicule <span class="required-star">*</span></label>
+              <input id="av2_veh" placeholder="Ex: AB 123 / TB 456..." oninput="updAll()"/>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field">
+              <label for="av2_d1">Date début</label>
+              <input type="date" id="av2_d1" onchange="updAll()"/>
+            </div>
+            <div class="field">
+              <label for="av2_d2">Date fin</label>
+              <input type="date" id="av2_d2" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="av2_rem">Remarques</label>
+            <textarea id="av2_rem" rows="3" placeholder="Remarques..." oninput="updAll()"></textarea>
+          </div>
+
+          <div class="preview-box" id="pre-avarie2" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('avarie')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailAvarie2()">Générer le mail</button>
+          </div>
+        </section>
+
+        <!-- MODULE 7 -->
+        <section id="tab-horaire-content" class="tab-content" data-tab="horaire" aria-label="Hor Conduite">
+          <div class="module-header"><h2>7. Hor Conduite</h2></div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label for="h_form">Formateur <span class="required-star">*</span></label>
+              <select id="h_form" onchange="updAll()"></select>
+            </div>
+            <div class="field" style="grid-column: span 2;">
+              <label for="h_d1">Date</label>
+              <input type="date" id="h_d1" onchange="updAll()"/>
+            </div>
+          </div>
+
+          <div class="preview-box" id="pre-horaire" aria-live="polite"></div>
+
+          <div class="btnbar no-print">
+            <button class="btn btn-reset" type="button" onclick="resetTab('horaire')">Vider</button>
+            <button class="btn btn-print" type="button" onclick="window.print()">Imprimer</button>
+            <button class="btn btn-mail" type="button" onclick="mailHoraire()">Générer le mail</button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================
+       CONFIG (modifiables)
+    ========================================================== */
+    const CONFIG = {
+      MAIL_CONFIG: {
+        cours_rct: "GTR-Planification@tpg.ch",
+        cours_600: "Dias.Celso@tpg.ch",
+        rails_to: "vondach.baptiste@tpg.ch,Resp.equipesCMB2@tpg.ch",
+        rails_cc: "batiments@tpg.ch",
+
+        tram_bachet: "Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch",
+        tram_chardon: "Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,Linares.David@tpg.ch",
+
+        abtb_bachet: "Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch",
+        abtb_chardon: "Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch",
+        abtb_jonctionab: "Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch",
+        abtb_jonctiontb: "Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch",
+
+        vehicule_leger: "ducret.julien@tpg.ch",
+        vehicule_abtb: "convers.alain@tpg.ch",
+
+        avarie_bachet: "Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch",
+        avarie_chardon: "Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch",
+        avarie_jonctab: "Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch",
+        avarie_joncttb: "Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch",
+
+        horaire_to: "bex@tpg.ch"
+      },
+
+      // ⚠️ Ambiguïté #3 : TB (trolleybus) dans module 5 non visible dans l’extrait HTML fourni.
+      // Je laisse une config vide par défaut pour éviter d’inventer.
+      vtbOptions: []
+    };
+
+    /* ==========================================================
+       LISTES FORMATEURS (selon données fournies)
+    ========================================================== */
+    const fComplet = [
+      "Abdel Aziz AGGOUNE",
+      "Ailton NERI DOS SANTOS JUNIOR",
+      "Angelino RIBEIRO MONTEIRO",
+      "Angelo CEPEDA",
+      "Anis MENSI",
+      "Arvid LEPPIN",
+      "Astrid ANNEN",
+      "Benoît THEVENIN",
+      "Bruno CIMAROSSA",
+      "Carlos MARTINS",
+      "Christian NOVERRAZ",
+      "David ABELLANEDA",
+      "Fabio ALEMANNO",
+      "Fitim ISENI",
+      "Francesco DE SABATO",
+      "Germano Antonio PEREIRA CORREIA",
+      "Gianpiero SEBASTIANELLI",
+      "Grégory DESPRES",
+      "Ilyes BENTAIBA",
+      "Jacques KRIEG",
+      "James SCOTTON",
+      "Jérôme CHESSEL",
+      "José MARTIN",
+      "José Manuel MOREIRA",
+      "José-Antonio PEREZ",
+      "Joseph FOTI",
+      "Luis Fernando GARCIA DAZA",
+      "Raffaele CAIOLA",
+      "Sami ESSEBBANI",
+      "Stanislas RUCKEBUSCH"
+    ];
+
+    // Liste Rails/Tramway telle que dans le HTML fourni : 11 (ambiguïté #1)
+    const fRails = [
+      "Angelo CEPEDA",
+      "Christian NOVERRAZ",
+      "Fabio ALEMANNO",
+      "Gianpiero SEBASTIANELLI",
+      "James SCOTTON",
+      "Jérôme CHESSEL",
+      "José MARTIN",
+      "José-Antonio PEREZ",
+      "Raffaele CAIOLA",
+      "Sami ESSEBBANI",
+      "Luis Fernando GARCIA DAZA"
+    ];
+
+    const fTram = [
+      "Angelo CEPEDA",
+      "Christian NOVERRAZ",
+      "Fabio ALEMANNO",
+      "Gianpiero SEBASTIANELLI",
+      "James SCOTTON",
+      "Jérôme CHESSEL",
+      "José MARTIN",
+      "José-Antonio PEREZ",
+      "Raffaele CAIOLA",
+      "Sami ESSEBBANI",
+      "Luis Fernando GARCIA DAZA"
+    ];
+
+    const MERCI = "\n\nL'équipe formation vous remercie par avance pour votre collaboration et reste à votre disposition pour toute information complémentaire.\n\nCordialement,";
+
+    /* ==========================================================
+       Helpers
+    ========================================================== */
+    const pad2 = n => (n<10 ? "0"+n : ""+n);
+
+    function fmt(dateStr){
+      // dateStr from <input type="date"> is "YYYY-MM-DD".
+      // Keep the placeholder for an empty or invalid date.
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ""))) return "___";
+      const [y,m,d] = String(dateStr).split("-").map(Number);
+      const candidate = new Date(Date.UTC(y, m - 1, d));
+      if(candidate.getUTCFullYear() !== y || candidate.getUTCMonth() !== m - 1 || candidate.getUTCDate() !== d) return "___";
+      return `${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
+    }
+
+    // Message content is kept as plain text. The same text is used by the
+    // preview renderer and by mailto body, so line breaks and labels cannot drift.
+    function bold(x){ return String(x ?? ""); }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;"
+      }[c]));
+    }
+    function normaliserNom(texte){
+      return texte
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+    }
+
+    function getCheckedValues(name){
+      return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+        .map(el => el.value);
+    }
+
+    function validateRequired(fieldIds){
+      let ok = true;
+      fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const bad = (!el.value || el.value === "" || (el.tagName === "SELECT" && el.value === ""));
+        if(bad){
+          ok = false;
+          el.classList.add('field-error');
+          el.setAttribute('aria-invalid','true');
+        }else{
+          el.classList.remove('field-error');
+          el.removeAttribute('aria-invalid');
+        }
+      });
+      return ok;
+    }
+
+    function validateNbCours(){
+      const el = document.getElementById('c_nb');
+      el.classList.remove('field-error');
+      if(!el.value) return false;
+      const n = Number(el.value);
+      if(!Number.isFinite(n) || n < 1 || n > 10){
+        el.classList.add('field-error');
+        el.setAttribute('aria-invalid','true');
+        return false;
+      }
+      el.removeAttribute('aria-invalid');
+      return true;
+    }
+
+    function setPreview(id, text){
+      const el = document.getElementById(id);
+      // Store the canonical plain text used in mailto. Render HTML only here.
+      el.dataset.plainText = text;
+      el.innerHTML = escapeHtml(text).replace(/\n/g,"<br>");
+    }
+
+    function updAll(){
+      buildCoursPreview();
+      buildRailsPreview();
+      buildTramPreview();
+      buildAbtbPreview();
+      buildVehiculePreview();
+      buildAvarie2Preview();
+      buildHorairePreview();
+    }
+
+    /* ==========================================================
+       Previews — Module 1
+    ========================================================== */
+    function buildCoursPreview(){
+      const type = document.getElementById('c_cours').value;
+      const nb   = document.getElementById('c_nb').value;
+      const form = document.getElementById('c_form').value;
+      const d1   = fmt(document.getElementById('c_d1').value);
+      const d2   = fmt(document.getElementById('c_d2').value);
+      const rem  = document.getElementById('c_rem').value || "Aucune";
+
+      const formText = form || "___";
+      const nbText = nb || "___";
+
+      let msg = "";
+
+      if(type === "RCT"){
+        msg =
+          `Bonjour,\n\n` +
+          `Dans le cadre de nos besoins en formation, nous souhaiterions planifier le cours RCT ` +
+          `pour ${bold(nbText)} personne(s), réparties en deux groupes sur deux journées, ` +
+          `aux dates suivantes :\n\n` +
+          `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+          `• Formateur : ${bold(formText)}\n` +
+          `• Remarques : ${bold(rem)}` +
+          MERCI;
+      }else if(type === "600T" || type === "600TB"){
+        const label = (type === "600T") ? "600 Tramway" : "600 Trolleybus";
+        msg =
+          `Bonjour,\n\n` +
+          `Dans le cadre de nos besoins en formation, nous aimerions planifier le cours ${label} ` +
+          `aux dates suivantes pour ${bold(nbText)} personne(s) :\n\n` +
+          `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+          `• Formateur : ${bold(formText)}\n` +
+          `• Remarques : ${bold(rem)}` +
+          MERCI;
+      }else{
+        msg = `Bonjour,\n\nVeuillez sélectionner un type de cours pour générer l'aperçu du message.`;
+      }
+
+      setPreview('pre-cours', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 2
+    ========================================================== */
+    function buildRailsPreview(){
+      const form = document.getElementById('r_form').value;
+      const d1   = fmt(document.getElementById('r_d1').value);
+      const d2   = fmt(document.getElementById('r_d2').value);
+      const rem  = document.getElementById('r_rem').value || "Aucune";
+      const formText = form || "___";
+
+      const msg =
+        `Bonjour,\n\n` +
+        `Dans le cadre de nos besoins en formation, nous souhaiterions réserver des rails glissants ` +
+        `aux dates suivantes :\n\n` +
+        `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+        `• Formateur : ${bold(formText)}\n` +
+        `• Remarques : ${bold(rem)}` +
+        MERCI;
+
+      setPreview('pre-rails', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 3
+    ========================================================== */
+    function buildTramPreview(){
+      const depot = document.getElementById('t_depot').value;
+      const form  = document.getElementById('t_f').value;
+      const d1    = fmt(document.getElementById('t_d1').value);
+      const d2    = fmt(document.getElementById('t_d2').value);
+      const rem   = document.getElementById('t_rem').value || "Aucune";
+      const vehs  = getCheckedValues('t_veh');
+
+      const msg =
+        `Bonjour,\n\n` +
+        `Dans le cadre de nos besoins en formation, nous souhaiterions réserver un tramway au dépôt de ${bold(depot || "___")} ` +
+        `aux dates suivantes :\n\n` +
+        `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+        `• Formateur : ${bold(form || "___")}\n` +
+        `• Véhicules : ${bold(vehs.length ? vehs.join(', ') : "___")}\n` +
+        `• Remarques : ${bold(rem)}` +
+        MERCI;
+
+      setPreview('pre-tram', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 4
+    ========================================================== */
+    function buildAbtbPreview(){
+      const depot = document.getElementById('a_depot').value;
+      const form  = document.getElementById('a_f').value;
+      const d1    = fmt(document.getElementById('a_d1').value);
+      const d2    = fmt(document.getElementById('a_d2').value);
+      const rem   = document.getElementById('a_rem').value || "Aucune";
+      const ab    = getCheckedValues('a_ab');
+      const tb    = getCheckedValues('a_tb');
+
+      const vehLines = [];
+      if(ab.length) vehLines.push(`Autobus : ${ab.join(', ')}`);
+      if(tb.length) vehLines.push(`Trolleybus : ${tb.join(', ')}`);
+
+      const vehText = vehLines.length ? vehLines.join(" | ") : "___";
+
+      const msg =
+        `Bonjour,\n\n` +
+        `Dans le cadre de nos besoins en formation, nous souhaiterions réserver un véhicule AB/TB au dépôt de ${bold(depot || "___")} ` +
+        `aux dates suivantes :\n\n` +
+        `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+        `• Formateur : ${bold(form || "___")}\n` +
+        `• Véhicules : ${bold(vehText)}\n` +
+        `• Remarques : ${bold(rem)}` +
+        MERCI;
+
+      setPreview('pre-abtb', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 5
+    ========================================================== */
+    function buildVehiculePreview(){
+      const form = document.getElementById('av_form').value || "___";
+      const d1   = fmt(document.getElementById('av_d1').value);
+      const d2   = fmt(document.getElementById('av_d2').value);
+      const rem  = document.getElementById('av_rem').value || "Aucune";
+
+      const service = getCheckedValues('v_service');
+      const ab      = getCheckedValues('v_ab');
+      const tb      = getCheckedValues('v_tb');
+
+      const categories = [];
+      if(service.length) categories.push(`Véhicule léger : ${service.join(', ')}`);
+      if(ab.length) categories.push(`Autobus : ${ab.join(', ')}`);
+      if(tb.length) categories.push(`Trolleybus : ${tb.join(', ')}`);
+
+      const vehText = categories.length ? categories.join(' | ') : "___";
+
+      const msg =
+        `Bonjour,\n\nAnnonce d'avarie :\n\n` +
+        `• Formateur : ${bold(form)}\n` +
+        `• Catégories véhicules : ${bold(vehText)}\n` +
+        `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+        `• Remarques : ${bold(rem)}` +
+        MERCI;
+
+      setPreview('pre-avarie', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 6
+    ========================================================== */
+    function buildAvarie2Preview(){
+      const form = document.getElementById('av2_form').value || "___";
+      const depot = document.getElementById('av2_depot').value || "___";
+      const veh = document.getElementById('av2_veh').value || "___";
+      const d1 = fmt(document.getElementById('av2_d1').value);
+      const d2 = fmt(document.getElementById('av2_d2').value);
+      const rem = document.getElementById('av2_rem').value || "Aucune";
+
+      const msg =
+        `Bonjour,\n\nAnnonce d'avarie :\n\n` +
+        `• Formateur : ${bold(form)}\n` +
+        `• Dépôt : ${bold(depot)}\n` +
+        `• N° véhicule : ${bold(veh)}\n` +
+        `• Dates : du ${bold(d1)} au ${bold(d2)}\n` +
+        `• Remarques : ${bold(rem)}` +
+        MERCI;
+
+      setPreview('pre-avarie2', msg);
+    }
+
+    /* ==========================================================
+       Previews — Module 7
+    ========================================================== */
+    function buildHorairePreview(){
+      const hD1   = fmt(document.getElementById('h_d1').value);
+      const hForm = document.getElementById('h_form').value || "___";
+
+      const msg =
+        `Bonjour,\n\n` +
+        `Je vous informe que j'effectuerai un horaire conduite, le ${bold(hD1)}.\n\n` +
+        `Je vous souhaite une belle journée.\n` +
+        `${bold(hForm)}` +
+        MERCI;
+
+      setPreview('pre-horaire', msg);
+    }
+
+    /* ==========================================================
+       E-mails mailto
+    ========================================================== */
+    function previewTextFrom(id){
+      const el = document.getElementById(id);
+      // Never scrape rendered HTML: mailto must contain plain text only.
+      return el.dataset.plainText || el.textContent || "";
+    }
+
+    function mailTo(recipient, subject, body){
+      const link = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = link;
+    }
+
+    function mailCours(){
+      // Champs bloquants : c_cours, c_nb, c_form
+      const okType = validateRequired(['c_cours','c_form']);
+      const okNb = validateNbCours();
+      if(!okType || !okNb){
+        alert("Veuillez renseigner les champs obligatoires (*)");
+        return;
+      }
+
+      const type = document.getElementById('c_cours').value;
+      const subject = "Organisation Cours";
+
+      const recipient = (type === "RCT")
+        ? CONFIG.MAIL_CONFIG.cours_rct
+        : CONFIG.MAIL_CONFIG.cours_600;
+
+      const body = previewTextFrom('pre-cours');
+      mailTo(recipient, subject, body);
+    }
+
+    function mailRails(){
+      if(!validateRequired(['r_form'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+      const subject = "Réservation Rails Glissants";
+      const body = previewTextFrom('pre-rails');
+
+      const to = CONFIG.MAIL_CONFIG.rails_to;
+      // cc mailto: via header CC n’est pas standard universellement,
+      // mais on peut l’ajouter dans la query.
+      const cc = CONFIG.MAIL_CONFIG.rails_cc;
+
+      const link = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = link;
+    }
+
+    function mailTram(){
+      if(!validateRequired(['t_f','t_depot'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+
+      const depot = document.getElementById('t_depot').value;
+      const subject = "Réservation Tramway";
+      const body = previewTextFrom('pre-tram');
+      const recipient = (depot === "Bachet") ? CONFIG.MAIL_CONFIG.tram_bachet : CONFIG.MAIL_CONFIG.tram_chardon;
+
+      mailTo(recipient, subject, body);
+    }
+
+    function mailAbtb(){
+      if(!validateRequired(['a_f','a_depot'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+
+      const depot = document.getElementById('a_depot').value;
+      const abVehicle = getCheckedValues('a_ab');
+      const tbVehicle = getCheckedValues('a_tb');
+
+      let recipient = "";
+      if(depot === "Bachet") recipient = CONFIG.MAIL_CONFIG.abtb_bachet;
+      else if(depot === "En-Chardon") recipient = CONFIG.MAIL_CONFIG.abtb_chardon;
+      else if(depot === "Jonction") {
+        if(tbVehicle.length > 0) recipient = CONFIG.MAIL_CONFIG.abtb_jonctiontb;
+        else recipient = CONFIG.MAIL_CONFIG.abtb_jonctionab;
+      }
+
+      const subject = "Réservation AB/TB";
+      const body = previewTextFrom('pre-abtb');
+      mailTo(recipient, subject, body);
+    }
+
+    function mailVehicule(){
+      if(!validateRequired(['av_form'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+
+      const subject = "Avarie véhicule de service";
+      const body = previewTextFrom('pre-avarie');
+
+      const service = getCheckedValues('v_service');
+      const ab      = getCheckedValues('v_ab');
+      const tb      = getCheckedValues('v_tb');
+
+      const toService = service.length ? CONFIG.MAIL_CONFIG.vehicule_leger : "";
+      const toAbTb    = (ab.length || tb.length) ? CONFIG.MAIL_CONFIG.vehicule_abtb : "";
+
+      let recipients = [];
+      if(toService) recipients.push(toService);
+      if(toAbTb) recipients.push(toAbTb);
+
+      if(recipients.length === 0){
+        alert("Veuillez sélectionner au moins une catégorie de véhicule.");
+        return;
+      }
+
+      mailTo(recipients.join(","), subject, body);
+    }
+
+    function mailAvarie2(){
+      if(!validateRequired(['av2_form','av2_depot','av2_veh'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+
+      const depot = document.getElementById('av2_depot').value;
+      let recipient = CONFIG.MAIL_CONFIG.avarie_bachet;
+      if(depot === "En-Chardon") recipient = CONFIG.MAIL_CONFIG.avarie_chardon;
+      else if(depot === "Jonction") recipient = CONFIG.MAIL_CONFIG.avarie_jonctab;
+
+      const subject = "Annonce Avarie AB / TB";
+      const body = previewTextFrom('pre-avarie2');
+      mailTo(recipient, subject, body);
+    }
+
+    function mailHoraire(){
+      if(!validateRequired(['h_form'])) { alert("Veuillez renseigner les champs obligatoires (*)"); return; }
+      const subject = "Horaire Conduite";
+      const body = previewTextFrom('pre-horaire');
+      mailTo(CONFIG.MAIL_CONFIG.horaire_to, subject, body);
+    }
+
+    /* ==========================================================
+       Reset
+    ========================================================== */
+    function resetTab(tab){
+      // reset uniquement la zone du module
+      const map = {
+        cours: 'tab-cours-content',
+        rails: 'tab-rails-content',
+        tram: 'tab-tram-content',
+        abtb: 'tab-abtb-content',
+        vehicule: 'tab-vehicule-content',
+        avarie: 'tab-avarie-content',
+        horaire: 'tab-horaire-content'
+      };
+      const id = map[tab];
+      const root = document.getElementById(id);
+      if(!root) return;
+
+      root.querySelectorAll('input, select, textarea').forEach(e=>{
+        if(e.type === 'checkbox') e.checked = false;
+        else e.value = "";
+        e.classList.remove('field-error');
+        e.removeAttribute('aria-invalid');
+      });
+
+      // re-render previews
+      updAll();
+    }
+
+    function logout(){
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('loginOverlay').style.display = 'flex';
+      // garder l’expérience : vider champs login
+      document.getElementById('loginForm').reset();
+      document.getElementById('loginError').style.display = 'none';
+    }
+
+    /* ==========================================================
+       Tabs nav
+    ========================================================== */
+    function setTab(tabKey){
+      // toggle desktop active button
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const desktopIds = {
+        cours: 'tab-cours',
+        rails: 'tab-rails',
+        tram: 'tab-tram',
+        abtb: 'tab-abtb',
+        vehicule: 'tab-veh',
+        avarie: 'tab-avarie',
+        horaire: 'tab-horaire'
+      };
+      const btnId = desktopIds[tabKey];
+      if(btnId) document.getElementById(btnId)?.classList.add('active');
+
+      // toggle contents
+      document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+      const content = document.querySelector(`[data-tab="${tabKey}"]`);
+      content?.classList.add('active');
+
+      // update mobile accordion highlight
+      document.querySelectorAll('.acc-header').forEach(h => h.classList.remove('active'));
+      const all = [
+        {key:'cours', header:'acc1'},
+        {key:'rails', header:'acc1'},
+        {key:'tram', header:'acc1'},
+        {key:'abtb', header:'acc2'},
+        {key:'vehicule', header:'acc2'},
+        {key:'avarie', header:'acc2'},
+        {key:'horaire', header:'acc3'}
+      ];
+      const target = all.find(x => x.key === tabKey)?.header;
+      if(target){
+        const btn = document.querySelector(`.acc-header[onclick*="${target}"]`);
+        btn?.classList.add('active');
+      }
+      // set active class in accordion buttons
+      document.querySelectorAll('.acc-body button').forEach(b => b.classList.remove('active'));
+      // best-effort: set based on onclick string
+      document.querySelectorAll('.acc-body button').forEach(b=>{
+        const oc = b.getAttribute('onclick') || '';
+        if(oc.includes(`setTab('${tabKey}')`) || oc.includes(`setTab("${tabKey}")`)){
+          b.classList.add('active');
+        }
+      });
+    }
+
+    function toggleAcc(id){
+      const el = document.getElementById(id);
+      // close others
+      ['acc1','acc2','acc3'].forEach(x=>{
+        if(x!==id) document.getElementById(x).style.display = 'none';
+      });
+      el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    /* ==========================================================
+       Init selects
+    ========================================================== */
+    function fillSelect(selectId, list, defaultLabel="-- Formateur --"){
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = "";
+      sel.add(new Option(defaultLabel, ""));
+      list.forEach(f => sel.add(new Option(f, f)));
+    }
+
+    function initFormateurs(){
+      fillSelect('c_form', fComplet);
+      fillSelect('r_form', fRails);
+      fillSelect('t_f', fTram);
+      fillSelect('a_f', fComplet);
+      fillSelect('av_form', fComplet);
+      fillSelect('av2_form', fComplet);
+      fillSelect('h_form', fComplet);
+    }
+
+    function initTBOptions(){
+      const grid = document.getElementById('tbGrid');
+      grid.innerHTML = "";
+      if(!CONFIG.vtbOptions || CONFIG.vtbOptions.length === 0){
+        const div = document.createElement('div');
+        div.style.gridColumn = "1 / -1";
+        div.style.color = "var(--muted)";
+        div.style.fontWeight = "700";
+        div.innerHTML = `Aucune option TB configurée pour le moment.
+          <div style="margin-top:6px; font-size:12.5px;">
+            Pour activer, renseigner la liste TB dans <code>CONFIG.vtbOptions</code>.
+          </div>`;
+        grid.appendChild(div);
+        return;
+      }
+      CONFIG.vtbOptions.forEach(v=>{
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" name="v_tb" value="${escapeHtml(v)}" onchange="updAll()"> ${escapeHtml(v)}`;
+        grid.appendChild(label);
+      });
+    }
+
+    /* ==========================================================
+       Login logic (identité locale)
+    ========================================================== */
+    document.getElementById("loginForm").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const prenom = document.getElementById("prenom").value;
+      const nom    = document.getElementById("nom").value;
+      const nomSaisi = normaliserNom(prenom + " " + nom);
+
+      const autorise = fComplet.some(person => normaliserNom(person) === nomSaisi);
+
+      if(!autorise){
+        document.getElementById("loginError").style.display = "block";
+        return;
+      }
+
+      // Success
+      document.getElementById("loginError").style.display = "none";
+      const userLabel = (prenom + " " + nom).trim();
+      document.getElementById("sessionUser").textContent = userLabel;
+
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      initFormateurs();
+      initTBOptions();
+      updAll();
+
+      // Set initial tab
+      setTab('cours');
+    });
+
+    /* ==========================================================
+       Auto-init previews even before login (optional)
+    ========================================================== */
+    // Rien ici : le DOM des inputs n’est pas manipulé tant que l’app n’est pas affichée,
+    // mais les fonctions d’init seront appelées au login.
+
+  </script>
+</body>
+</html>

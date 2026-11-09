@@ -14,15 +14,18 @@ import { FormateursDirectory } from './components/formateurs/FormateursDirectory
 import { Formateur } from './types/formateur';
 import { AppConfig } from './types/modules';
 import { api } from './services/api';
-import { ShieldCheck, Info } from 'lucide-react';
+import { storage } from './services/storage';
+import { ChangePasswordModal } from './components/auth/ChangePasswordModal';
+import { ShieldCheck, Info, Copy, Check, KeyRound, Key, ShieldAlert } from 'lucide-react';
 
 const MainApp: React.FC = () => {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const canManageFormateurs = user?.role === 'admin';
+  const { isAuthenticated, isLoading, user, logout, refreshSession } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('cours');
-  const [formateurs, setFormateurs] = useState<Formateur[]>([]);
+  const [formateurs, setFormateurs] = useState<Formateur[]>(() => storage.getFormateurs());
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
+  const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<'user' | 'pass' | null>(null);
 
   const loadData = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -32,10 +35,39 @@ const MainApp: React.FC = () => {
         api.formateurs.getAll(),
         api.config.get()
       ]);
-      setFormateurs(formData.formateurs);
+
+      let finalFormateurs = (formData.formateurs || []).filter(
+        f => !f.nomComplet?.toLowerCase().includes('de sabato')
+      );
+
+      // Persistance automatique : vérifier si des formateurs locaux (ex: créés manuellement)
+      // sont absents du serveur (par ex. suite à un redémarrage du conteneur en mémoire)
+      const localCustoms = storage.getCustomFormateurs();
+      const missingOnServer = localCustoms.filter(
+        (lc) => !finalFormateurs.some((sf) => String(sf.id) === String(lc.id) || sf.nomComplet.trim().toLowerCase() === lc.nomComplet.trim().toLowerCase())
+      );
+
+      if (missingOnServer.length > 0 && (user?.role === 'admin' || user?.role === 'responsable')) {
+        try {
+          const syncRes = await api.formateurs.sync(missingOnServer);
+          if (syncRes.success && Array.isArray(syncRes.formateurs)) {
+            finalFormateurs = syncRes.formateurs;
+          }
+        } catch (syncErr) {
+          console.warn('Erreur sync formateurs avec le serveur:', syncErr);
+          finalFormateurs = [...finalFormateurs, ...missingOnServer];
+        }
+      }
+
+      setFormateurs(finalFormateurs);
+      storage.saveFormateurs(finalFormateurs);
       setConfig(cfgData);
     } catch (err) {
       console.error('Error loading initial portal data:', err);
+      const cached = storage.getFormateurs();
+      if (cached.length > 0) {
+        setFormateurs(cached);
+      }
     } finally {
       setDataLoading(false);
     }
@@ -48,25 +80,47 @@ const MainApp: React.FC = () => {
   }, [isAuthenticated, loadData]);
 
   const handleCreateFormateur = async (data: Partial<Formateur>) => {
-    if (!canManageFormateurs) throw new Error('Accès réservé à l’administrateur.');
-    await api.formateurs.create(data);
+    const result = await api.formateurs.create(data);
+    if (result.success && result.formateur) {
+      storage.addOrUpdateCustomFormateur(result.formateur);
+      setFormateurs((prev) => {
+        const updated = [...prev.filter((f) => String(f.id) !== String(result.formateur.id)), result.formateur];
+        storage.saveFormateurs(updated);
+        return updated;
+      });
+    }
+    if (result.account?.tempPassword) {
+      setCredentials({ username: result.account.username, password: result.account.tempPassword });
+    }
     await loadData();
   };
 
   const handleUpdateFormateur = async (id: string, data: Partial<Formateur>) => {
-    if (!canManageFormateurs) throw new Error('Accès réservé à l’administrateur.');
-    await api.formateurs.update(id, data);
+    const res = await api.formateurs.update(id, data);
+    if (res.success && res.formateur) {
+      storage.addOrUpdateCustomFormateur(res.formateur);
+      setFormateurs((prev) => {
+        const updated = prev.map((f) => (String(f.id) === String(id) ? res.formateur : f));
+        storage.saveFormateurs(updated);
+        return updated;
+      });
+    }
     await loadData();
   };
 
   const handleDeleteFormateur = async (id: string) => {
-    if (!canManageFormateurs) throw new Error('Accès réservé à l’administrateur.');
     await api.formateurs.delete(id);
+    storage.deleteCustomFormateur(id);
+    setFormateurs((prev) => {
+      const updated = prev.filter((f) => String(f.id) !== String(id));
+      storage.saveFormateurs(updated);
+      return updated;
+    });
     await loadData();
   };
 
   const handleResetDefaults = async () => {
-    if (!canManageFormateurs) throw new Error('Accès réservé à l’administrateur.');
+    storage.clearAll();
     await api.formateurs.resetDefault();
     await loadData();
   };
@@ -93,12 +147,12 @@ const MainApp: React.FC = () => {
     cours_600: 'Dias.Celso@tpg.ch',
     rails_to: 'vondach.baptiste@tpg.ch,Resp.equipesCMB2@tpg.ch',
     rails_cc: 'batiments@tpg.ch',
-    tram_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch',
+    tram_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
     tram_chardon: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,Linares.David@tpg.ch',
-    abtb_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_chardon: 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_jonctionab: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch',
-    abtb_jonctiontb: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch,cadres.operationnels@tpg.ch',
+    abtb_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
+    abtb_chardon: 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch',
+    abtb_jonctionab: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch',
+    abtb_jonctiontb: 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch',
     vehicule_leger: 'ducret.julien@tpg.ch',
     vehicule_abtb: 'convers.alain@tpg.ch',
     avarie_bachet: 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch',
@@ -160,7 +214,6 @@ const MainApp: React.FC = () => {
                 {activeTab === 'formateurs' && (
                   <FormateursDirectory
                     formateurs={formateurs}
-                    canManage={canManageFormateurs}
                     onRefresh={loadData}
                     onCreate={handleCreateFormateur}
                     onUpdate={handleUpdateFormateur}
@@ -187,6 +240,132 @@ const MainApp: React.FC = () => {
 
       {/* Offline Indicator Toast */}
       <OfflineIndicator />
+
+      {/* Modal Obligatoire de Première Connexion Formateur (Création de son propre mot de passe) */}
+      {user?.mustChangePassword && (
+        <ChangePasswordModal
+          user={user}
+          onSuccess={refreshSession}
+          onLogout={logout}
+        />
+      )}
+
+      {/* Modal d'affichage du 1er mot de passe temporaire pour l'administrateur */}
+      {credentials && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+            {/* Header */}
+            <div className="bg-[#FD5312] p-5 text-white flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <KeyRound className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3
+                  className="font-bold text-sm uppercase tracking-wide"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  Compte Formateur Créé avec Succès
+                </h3>
+                <p className="text-xs text-orange-100 font-semibold mt-0.5">
+                  1er mot de passe temporaire généré
+                </p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-950 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-[#FD5312] shrink-0 mt-0.5" />
+                <p>
+                  Transmettez ces identifiants au formateur. <strong>Lors de sa première connexion</strong> avec ce mot de passe temporaire, l'application lui demandera obligatoirement de <strong>créer son propre mot de passe personnel</strong>.
+                </p>
+              </div>
+
+              {/* Identifiant */}
+              <div>
+                <label className="block text-xs text-gray-600 font-bold mb-1">
+                  Identifiant de connexion
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono font-bold text-gray-900 select-all">
+                    {credentials.username}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(credentials.username);
+                      setCopiedField('user');
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                    className="p-2.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="Copier l'identifiant"
+                  >
+                    {copiedField === 'user' ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-700">Copié</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>Copier</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 1er mot de passe temporaire */}
+              <div>
+                <label className="block text-xs text-gray-600 font-bold mb-1">
+                  1er mot de passe (temporaire)
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-2.5 bg-amber-50 border border-amber-300 rounded-lg text-base font-mono font-black text-amber-900 tracking-wider select-all">
+                    {credentials.password}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(credentials.password);
+                      setCopiedField('pass');
+                      setTimeout(() => setCopiedField(null), 2000);
+                    }}
+                    className="p-2.5 bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-900 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="Copier le mot de passe temporaire"
+                  >
+                    {copiedField === 'pass' ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        <span className="text-emerald-700">Copié</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>Copier</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCredentials(null);
+                    setCopiedField(null);
+                  }}
+                  className="w-full py-2.5 bg-[#FD5312] hover:bg-[#e04508] active:scale-98 text-white font-black uppercase text-xs rounded-lg shadow-sm transition cursor-pointer"
+                  style={{ fontFamily: "'HelveticaNeue LT COM 65 MD', 'Helvetica Neue LT Com 65 Md', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+                >
+                  J'ai noté ces identifiants • Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
