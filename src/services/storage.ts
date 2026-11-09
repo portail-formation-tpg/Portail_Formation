@@ -39,14 +39,30 @@ export const storage = {
   getFormateurs(): Formateur[] {
     try {
       const data = localStorage.getItem(STORAGE_KEY_FORMATEURS);
-      if (!data) {
-        return DEFAULT_OFFICIAL_FORMATEURS;
+      const customs = this.getCustomFormateurs();
+
+      let baseList: Formateur[] = [];
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            baseList = parsed;
+          }
+        } catch {}
       }
-      const parsed = JSON.parse(data);
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        return DEFAULT_OFFICIAL_FORMATEURS;
+
+      if (baseList.length === 0) {
+        baseList = [...DEFAULT_OFFICIAL_FORMATEURS];
       }
-      return parsed.filter(f => !f.nomComplet?.toLowerCase().includes('de sabato'));
+
+      // Fusionner systématiquement tous les formateurs personnalisés
+      for (const c of customs) {
+        if (!baseList.some(f => String(f.id) === String(c.id) || f.nomComplet.trim().toLowerCase() === c.nomComplet.trim().toLowerCase())) {
+          baseList.push(c);
+        }
+      }
+
+      return baseList.filter(f => !f.nomComplet?.toLowerCase().includes('de sabato'));
     } catch (e) {
       console.warn('Erreur lecture localStorage formateurs:', e);
       return DEFAULT_OFFICIAL_FORMATEURS;
@@ -57,9 +73,24 @@ export const storage = {
     try {
       const filtered = list.filter(f => !f.nomComplet?.toLowerCase().includes('de sabato'));
       localStorage.setItem(STORAGE_KEY_FORMATEURS, JSON.stringify(filtered));
-      // Enregistrer également les formateurs manuels/personnalisés dans une clé dédiée
-      const customs = filtered.filter(f => f.sourceOrigin === 'manuel' || Number(f.id) > 100);
-      localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(customs));
+
+      // Conserver et fusionner tous les formateurs personnalisés pour ne JAMAIS les effacer
+      const existingCustoms = this.getCustomFormateurs();
+      const customMap = new Map<string, Formateur>();
+      for (const ec of existingCustoms) {
+        customMap.set(String(ec.id), ec);
+      }
+
+      for (const f of filtered) {
+        const isOfficial = DEFAULT_OFFICIAL_FORMATEURS.some(
+          o => String(o.id) === String(f.id) && o.nomComplet.trim().toLowerCase() === f.nomComplet.trim().toLowerCase()
+        );
+        if (!isOfficial || f.sourceOrigin === 'manuel' || Number(f.id) > 29) {
+          customMap.set(String(f.id), f);
+        }
+      }
+
+      localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(Array.from(customMap.values())));
     } catch (e) {
       console.warn('Erreur sauvegarde localStorage formateurs:', e);
     }

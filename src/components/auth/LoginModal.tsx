@@ -129,7 +129,10 @@ export const LoginModal: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => handleQuickFill('admin', 'AdminTpg2026!')}
+                onClick={() => {
+                  const savedAdmin = localStorage.getItem('tpg_pass_admin');
+                  handleQuickFill('admin', savedAdmin || 'AdminTpg2026!');
+                }}
                 className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
               >
                 <div className="font-black text-[#FD5312]">Administrateur</div>
@@ -138,7 +141,10 @@ export const LoginModal: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleQuickFill('Christian NOVERRAZ', 'TpgFormation2026!')}
+                onClick={() => {
+                  const savedFormateur = localStorage.getItem('tpg_pass_11');
+                  handleQuickFill('Christian NOVERRAZ', savedFormateur || 'TpgFormation2026!');
+                }}
                 className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
               >
                 <div className="font-black text-gray-800">Formateur Tram</div>

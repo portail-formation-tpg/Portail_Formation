@@ -40,11 +40,16 @@ const MainApp: React.FC = () => {
         f => !f.nomComplet?.toLowerCase().includes('de sabato')
       );
 
-      // Persistance automatique : vérifier si des formateurs locaux (ex: créés manuellement)
-      // sont absents du serveur (par ex. suite à un redémarrage du conteneur en mémoire)
+      // Persistance automatique : fusionner systématiquement les formateurs personnalisés
       const localCustoms = storage.getCustomFormateurs();
+      for (const custom of localCustoms) {
+        if (!finalFormateurs.some((sf) => String(sf.id) === String(custom.id) || sf.nomComplet.trim().toLowerCase() === custom.nomComplet.trim().toLowerCase())) {
+          finalFormateurs.push(custom);
+        }
+      }
+
       const missingOnServer = localCustoms.filter(
-        (lc) => !finalFormateurs.some((sf) => String(sf.id) === String(lc.id) || sf.nomComplet.trim().toLowerCase() === lc.nomComplet.trim().toLowerCase())
+        (lc) => !(formData.formateurs || []).some((sf) => String(sf.id) === String(lc.id) || sf.nomComplet.trim().toLowerCase() === lc.nomComplet.trim().toLowerCase())
       );
 
       if (missingOnServer.length > 0 && (user?.role === 'admin' || user?.role === 'responsable')) {
@@ -55,7 +60,6 @@ const MainApp: React.FC = () => {
           }
         } catch (syncErr) {
           console.warn('Erreur sync formateurs avec le serveur:', syncErr);
-          finalFormateurs = [...finalFormateurs, ...missingOnServer];
         }
       }
 

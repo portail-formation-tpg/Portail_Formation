@@ -76,7 +76,15 @@ export const api = {
         const cleanPass = password.trim();
 
         // 1. Compte Administrateur
-        if (cleanId === 'admin' && (cleanPass === 'admin123' || cleanPass === 'AdminTpg2026!' || cleanPass === 'admin')) {
+        const savedAdminPass = localStorage.getItem('tpg_pass_admin');
+        const validAdminPasses = [
+          savedAdminPass,
+          'AdminTpg2026!',
+          'admin123',
+          'admin'
+        ].filter(Boolean) as string[];
+
+        if (cleanId === 'admin' && validAdminPasses.includes(cleanPass)) {
           const user: UserSession = {
             id: 'usr_admin',
             username: 'admin',
@@ -93,13 +101,28 @@ export const api = {
 
         // 2. Recherche parmi les 29 formateurs certifiés
         const formateurs = storage.getFormateurs();
-        const formateur = formateurs.find(f => 
-          f.nomComplet.toLowerCase() === cleanId ||
-          f.email.toLowerCase() === cleanId ||
-          f.acronyme.toLowerCase() === cleanId ||
-          f.nom.toLowerCase() === cleanId ||
-          (cleanId.includes('.') && f.email.toLowerCase().startsWith(cleanId))
-        );
+        const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const normId = normalize(cleanId);
+
+        const formateur = formateurs.find(f => {
+          const normNom = normalize(f.nom);
+          const normPrenom = normalize(f.prenom);
+          const normComplet = normalize(f.nomComplet);
+          const normEmail = normalize(f.email);
+          const normPrefix = normEmail.split('@')[0];
+
+          return (
+            normComplet === normId ||
+            normEmail === normId ||
+            normPrefix === normId ||
+            `${normPrenom}.${normNom}` === normId ||
+            `${normNom}.${normPrenom}` === normId ||
+            `${normPrenom} ${normNom}` === normId ||
+            `${normNom} ${normPrenom}` === normId ||
+            (f.acronyme && normalize(f.acronyme) === normId) ||
+            normNom === normId
+          );
+        });
 
         if (formateur) {
           const customPassKey = `tpg_pass_${formateur.id}`;
@@ -137,13 +160,26 @@ export const api = {
     },
     getSession: async (): Promise<{ authenticated: boolean; user: UserSession }> => {
       try {
-        return await request<{ authenticated: boolean; user: UserSession }>('/api/auth/session');
+        const res = await request<{ authenticated: boolean; user: UserSession }>('/api/auth/session');
+        if (res && res.user) {
+          const passKey = res.user.role === 'admin' ? 'tpg_pass_admin' : `tpg_pass_${res.user.formateurId || res.user.id}`;
+          const localCustomPass = localStorage.getItem(passKey);
+          if (localCustomPass) {
+            res.user.mustChangePassword = false;
+          }
+        }
+        return res;
       } catch {
         const token = getStoredToken();
         const saved = localStorage.getItem(USER_KEY);
         if (token && saved) {
           try {
             const user = JSON.parse(saved);
+            const passKey = user.role === 'admin' ? 'tpg_pass_admin' : `tpg_pass_${user.formateurId || user.id}`;
+            const localCustomPass = localStorage.getItem(passKey);
+            if (localCustomPass) {
+              user.mustChangePassword = false;
+            }
             return { authenticated: true, user };
           } catch {
             // ignore
@@ -154,23 +190,28 @@ export const api = {
     },
     changePassword: async (currentPassword: string, newPassword: string) => {
       try {
-        return await request<{ success: boolean; message: string }>('/api/auth/change-password', {
+        await request<{ success: boolean; message: string }>('/api/auth/change-password', {
           method: 'POST',
           body: JSON.stringify({ currentPassword, newPassword })
         });
       } catch {
-        const saved = localStorage.getItem(USER_KEY);
-        if (saved) {
+        // En mode Vercel / hors ligne
+      }
+
+      // Toujours persister dans localStorage pour que Vercel mémorise le nouveau mot de passe
+      const saved = localStorage.getItem(USER_KEY);
+      if (saved) {
+        try {
           const user = JSON.parse(saved);
-          if (user.formateurId) {
-            localStorage.setItem(`tpg_pass_${user.formateurId}`, newPassword);
-          }
+          const passKey = user.role === 'admin' ? 'tpg_pass_admin' : `tpg_pass_${user.formateurId || user.id}`;
+          localStorage.setItem(passKey, newPassword);
           user.mustChangePassword = false;
           localStorage.setItem(USER_KEY, JSON.stringify(user));
-          return { success: true, message: 'Mot de passe mis à jour avec succès.' };
+        } catch {
+          // ignore
         }
-        return { success: true, message: 'Mot de passe mis à jour.' };
       }
+      return { success: true, message: 'Mot de passe mis à jour avec succès.' };
     }
   },
 
