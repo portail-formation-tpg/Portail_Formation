@@ -356,7 +356,20 @@ export const api = {
       defaultTempPassword: string | null;
     }> => {
       try {
-        return await request(`/api/formateurs/${id}/account`);
+        const res = await request<{
+          formateurId: string;
+          nomComplet: string;
+          email: string;
+          mobile: string;
+          username: string;
+          role: string;
+          mustChangePassword: boolean;
+          defaultTempPassword: string | null;
+        }>(`/api/formateurs/${id}/account`);
+        if (localStorage.getItem(`tpg_pass_${id}`)) {
+          res.mustChangePassword = false;
+        }
+        return res;
       } catch {
         const list = storage.getFormateurs();
         const f = list.find(item => item.id === id);
@@ -382,15 +395,31 @@ export const api = {
       message: string;
     }> => {
       try {
-        return await request(`/api/formateurs/${id}/reset-password`, {
+        const res = await request<{
+          success: boolean;
+          username: string;
+          nomComplet: string;
+          tempPassword: string;
+          message: string;
+        }>(`/api/formateurs/${id}/reset-password`, {
           method: 'POST',
           body: JSON.stringify({ newPassword })
         });
+        if (newPassword) {
+          localStorage.setItem(`tpg_pass_${id}`, newPassword);
+        } else {
+          localStorage.removeItem(`tpg_pass_${id}`);
+        }
+        return res;
       } catch {
         const list = storage.getFormateurs();
         const f = list.find(item => item.id === id);
         const pwd = newPassword || 'TpgFormation2026!';
-        localStorage.setItem(`tpg_pass_${id}`, pwd);
+        if (newPassword) {
+          localStorage.setItem(`tpg_pass_${id}`, newPassword);
+        } else {
+          localStorage.removeItem(`tpg_pass_${id}`);
+        }
         return {
           success: true,
           username: f ? f.email.split('@')[0] : 'formateur',
@@ -415,7 +444,30 @@ export const api = {
       }>;
     }> => {
       try {
-        return await request('/api/formateurs-accounts');
+        const res = await request<{
+          defaultPassword: string;
+          total: number;
+          accounts: Array<{
+            id: string;
+            nomComplet: string;
+            email: string;
+            mobile: string;
+            username: string;
+            mustChangePassword: boolean;
+            hasLoggedIn: boolean;
+            defaultTempPassword: string;
+          }>;
+        }>('/api/formateurs-accounts');
+        if (res && Array.isArray(res.accounts)) {
+          res.accounts = res.accounts.map(acc => {
+            const hasCustom = !!localStorage.getItem(`tpg_pass_${acc.id}`);
+            if (hasCustom) {
+              return { ...acc, mustChangePassword: false, hasLoggedIn: true };
+            }
+            return acc;
+          });
+        }
+        return res;
       } catch {
         const list = storage.getFormateurs();
         return {
