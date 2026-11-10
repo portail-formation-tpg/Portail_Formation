@@ -68,6 +68,10 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
     setErrorMsg(null);
   };
 
+  const TRAM_BACHET_TO = 'Resp.équipes CMB <Resp.equipesCMB2@tpg.ch>; Equipes_Planification_CMB <Equipes_Planification_CMB@tpg.ch>';
+  const TRAM_CHARDON_TO = 'Resp.équipes CMC <Resp.equipesCMC@tpg.ch>; Equipes_Planification_CMC <Equipes_Planification_CMC@tpg.ch>; Linares David <Linares.David@tpg.ch>';
+  const TRAM_BCC = 'Cadres Opérationnels <cadres.operationnels@tpg.ch>';
+
   const handleSendMail = () => {
     if (!formateur || !depot) {
       setErrorMsg('Veuillez renseigner les champs obligatoires (*) Formateur et Dépôt.');
@@ -75,10 +79,9 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
     }
     setErrorMsg(null);
 
-    const recipient = depot === 'Bachet' ? mailConfig.tram_bachet : mailConfig.tram_chardon;
-    const bcc = depot === 'Bachet' ? 'cadres.operationnels@tpg.ch' : undefined;
+    const recipient = depot === 'Bachet' ? TRAM_BACHET_TO : TRAM_CHARDON_TO;
     const subject = 'Réservation Tramway';
-    mailTo(recipient, subject, previewText, undefined, bcc);
+    mailTo(recipient, subject, previewText, undefined, TRAM_BCC);
   };
 
   return (
@@ -203,17 +206,15 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
           {previewText}
         </div>
         {depot && (
-          <div className="mt-2 text-xs text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+          <div className="mt-2 text-xs text-gray-600 flex flex-col gap-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
             <div>
               <span className="font-bold text-gray-700">Destinataire(s) :</span>{' '}
-              <span className="font-mono text-gray-800">{depot === 'Bachet' ? mailConfig.tram_bachet : mailConfig.tram_chardon}</span>
+              <span className="font-mono text-gray-800">{depot === 'Bachet' ? TRAM_BACHET_TO : TRAM_CHARDON_TO}</span>
             </div>
-            {depot === 'Bachet' && (
-              <div>
-                <span className="font-bold text-gray-700">Cci :</span>{' '}
-                <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">cadres.operationnels@tpg.ch</span>
-              </div>
-            )}
+            <div>
+              <span className="font-bold text-gray-700">Cci :</span>{' '}
+              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">{TRAM_BCC}</span>
+            </div>
           </div>
         )}
       </div>

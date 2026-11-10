@@ -57,15 +57,15 @@ export function mailTo(recipient: string, subject: string, body: string, cc?: st
 
   const queryParts: string[] = [];
   if (cleanCcList.length > 0) {
-    queryParts.push(`cc=${encodeURIComponent(cleanCcList.join(','))}`);
+    queryParts.push(`cc=${encodeURIComponent(cleanCcList.join(';'))}`);
   }
   if (bccList.length > 0) {
-    queryParts.push(`bcc=${encodeURIComponent(bccList.join(','))}`);
+    queryParts.push(`bcc=${encodeURIComponent(bccList.join(';'))}`);
   }
   queryParts.push(`subject=${encodeURIComponent(subject)}`);
   queryParts.push(`body=${encodeURIComponent(body)}`);
 
-  const primaryRecipient = cleanRecList.join(',');
+  const primaryRecipient = cleanRecList.join(';');
   const link = `mailto:${primaryRecipient}?${queryParts.join('&')}`;
 
   try {

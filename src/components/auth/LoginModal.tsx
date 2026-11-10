@@ -121,40 +121,6 @@ export const LoginModal: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick test accounts helper */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-2">
-              Comptes de test & validation rapide :
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  const savedAdmin = localStorage.getItem('tpg_pass_admin');
-                  handleQuickFill('admin', savedAdmin || 'AdminTpg2026!');
-                }}
-                className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
-              >
-                <div className="font-black text-[#FD5312]">Administrateur</div>
-                <div className="text-[10px] text-gray-500">CRUD complet & audit</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const savedFormateur = localStorage.getItem('tpg_pass_11');
-                  handleQuickFill('Christian NOVERRAZ', savedFormateur || 'TpgFormation2026!');
-                }}
-                className="p-2 bg-gray-50 hover:bg-orange-50 hover:border-orange-200 border border-gray-200 rounded text-left transition cursor-pointer"
-              >
-                <div className="font-black text-gray-800">Formateur Tram</div>
-                <div className="text-[10px] text-gray-500">Ch. NOVERRAZ</div>
-              </button>
-            </div>
-            <p className="mt-2 text-[10px] text-gray-400 text-center">
-              Chiffrement Bcrypt 10 rounds • Sessions chiffrées sécurisées • Protection des routes
-            </p>
-          </div>
         </div>
       </div>
     </div>
