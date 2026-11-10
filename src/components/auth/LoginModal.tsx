@@ -73,7 +73,7 @@ export const LoginModal: React.FC = () => {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Ex: admin ou Christian NOVERRAZ"
+                  placeholder="Ex: admin ou Prénom Nom"
                   className="w-full pl-9 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-[#FD5312] focus:ring-2 focus:ring-[#FD5312]/20 transition outline-none"
                 />
               </div>

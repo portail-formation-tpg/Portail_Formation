@@ -60,7 +60,8 @@ export const Module6Avarie: React.FC<Props> = ({ formateurs, mailConfig }) => {
     }
 
     const subject = 'Annonce Avarie AB / TB';
-    mailTo(recipient, subject, previewText);
+    const cc = 'Cadres Opérationnels <cadres.operationnels@tpg.ch>';
+    mailTo(recipient, subject, previewText, cc);
   };
 
   return (
@@ -170,6 +171,24 @@ export const Module6Avarie: React.FC<Props> = ({ formateurs, mailConfig }) => {
         <div className="p-4 bg-white border-2 border-[#FD5312] rounded-xl whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-900 shadow-sm min-h-[160px]">
           {previewText}
         </div>
+        {depot && (
+          <div className="mt-2 text-xs text-gray-600 flex flex-col gap-1 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <div>
+              <span className="font-bold text-gray-700">Destinataire(s) :</span>{' '}
+              <span className="font-mono text-gray-800">
+                {depot === 'Bachet'
+                  ? mailConfig.avarie_bachet
+                  : depot === 'En-Chardon'
+                  ? mailConfig.avarie_chardon
+                  : mailConfig.avarie_jonctab}
+              </span>
+            </div>
+            <div>
+              <span className="font-bold text-gray-700">Cc :</span>{' '}
+              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">Cadres Opérationnels &lt;cadres.operationnels@tpg.ch&gt;</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2.5 mt-4 no-print">

@@ -70,7 +70,7 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
 
   const TRAM_BACHET_TO = 'Resp.équipes CMB <Resp.equipesCMB2@tpg.ch>; Equipes_Planification_CMB <Equipes_Planification_CMB@tpg.ch>';
   const TRAM_CHARDON_TO = 'Resp.équipes CMC <Resp.equipesCMC@tpg.ch>; Equipes_Planification_CMC <Equipes_Planification_CMC@tpg.ch>; Linares David <Linares.David@tpg.ch>';
-  const TRAM_BCC = 'Cadres Opérationnels <cadres.operationnels@tpg.ch>';
+  const TRAM_CC = 'Cadres Opérationnels <cadres.operationnels@tpg.ch>';
 
   const handleSendMail = () => {
     if (!formateur || !depot) {
@@ -81,7 +81,7 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
 
     const recipient = depot === 'Bachet' ? TRAM_BACHET_TO : TRAM_CHARDON_TO;
     const subject = 'Réservation Tramway';
-    mailTo(recipient, subject, previewText, undefined, TRAM_BCC);
+    mailTo(recipient, subject, previewText, TRAM_CC);
   };
 
   return (
@@ -212,8 +212,8 @@ export const Module3Tram: React.FC<Props> = ({ formateurs, mailConfig }) => {
               <span className="font-mono text-gray-800">{depot === 'Bachet' ? TRAM_BACHET_TO : TRAM_CHARDON_TO}</span>
             </div>
             <div>
-              <span className="font-bold text-gray-700">Cci :</span>{' '}
-              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">{TRAM_BCC}</span>
+              <span className="font-bold text-gray-700">Cc :</span>{' '}
+              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">{TRAM_CC}</span>
             </div>
           </div>
         )}

@@ -88,22 +88,22 @@ export const Module4Abtb: React.FC<Props> = ({ formateurs, mailConfig }) => {
     setErrorMsg(null);
 
     let recipient = '';
-    const bcc = 'cadres.operationnels@tpg.ch';
+    const cc = 'Cadres Opérationnels <cadres.operationnels@tpg.ch>';
 
     if (depot === 'Bachet') {
-      recipient = mailConfig.abtb_bachet || 'Resp.equipesCMB2@tpg.ch,Equipes_Planification_CMB@tpg.ch';
+      recipient = mailConfig.abtb_bachet || 'Resp.equipesCMB2@tpg.ch;Equipes_Planification_CMB@tpg.ch';
     } else if (depot === 'En-Chardon') {
-      recipient = mailConfig.abtb_chardon || 'Resp.equipesCMC@tpg.ch,Equipes_Planification_CMC@tpg.ch';
+      recipient = mailConfig.abtb_chardon || 'Resp.equipesCMC@tpg.ch;Equipes_Planification_CMC@tpg.ch';
     } else if (depot === 'Jonction') {
       if (selectedTb.length > 0) {
-        recipient = mailConfig.abtb_jonctiontb || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch';
+        recipient = mailConfig.abtb_jonctiontb || 'Resp.equipesCMJ2@tpg.ch;Equipes_Planification_CMJ@tpg.ch';
       } else {
-        recipient = mailConfig.abtb_jonctionab || 'Resp.equipesCMJ2@tpg.ch,Equipes_Planification_CMJ@tpg.ch';
+        recipient = mailConfig.abtb_jonctionab || 'Resp.equipesCMJ2@tpg.ch;Equipes_Planification_CMJ@tpg.ch';
       }
     }
 
     const subject = 'Réservation AB/TB';
-    mailTo(recipient, subject, previewText, undefined, bcc);
+    mailTo(recipient, subject, previewText, cc);
   };
 
   return (
@@ -302,8 +302,8 @@ export const Module4Abtb: React.FC<Props> = ({ formateurs, mailConfig }) => {
               </span>
             </div>
             <div>
-              <span className="font-bold text-gray-700">Cci :</span>{' '}
-              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">cadres.operationnels@tpg.ch</span>
+              <span className="font-bold text-gray-700">Cc :</span>{' '}
+              <span className="font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 font-semibold">Cadres Opérationnels &lt;cadres.operationnels@tpg.ch&gt;</span>
             </div>
           </div>
         )}

@@ -728,16 +728,6 @@ export const FormateursDirectory: React.FC<Props> = ({
                             </span>
                           )}
 
-                          {/* Logos TPG selon qualifications */}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <FormateurVehicleLogos
-                              hasTram={f.hasTram}
-                              hasAB={f.hasAB}
-                              hasTB={f.hasTB}
-                              hasCTT={f.hasCTT}
-                              isTramway={f.isTramway}
-                            />
-                          </div>
                         </div>
                       )}
                     </td>
@@ -889,15 +879,6 @@ export const FormateursDirectory: React.FC<Props> = ({
                 <div className="font-black text-gray-900 text-base">{deleteCandidate.nomComplet}</div>
                 <div className="text-xs text-gray-600 mt-1">E-mail : {deleteCandidate.email || 'Non renseigné'}</div>
                 <div className="text-xs text-gray-600">Portable : {deleteCandidate.mobile || 'Non renseigné'}</div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <FormateurVehicleLogos
-                    hasTram={deleteCandidate.hasTram}
-                    hasAB={deleteCandidate.hasAB}
-                    hasTB={deleteCandidate.hasTB}
-                    hasCTT={deleteCandidate.hasCTT}
-                    isTramway={deleteCandidate.isTramway}
-                  />
-                </div>
               </div>
               <p className="text-xs text-gray-500">
                 Cette suppression mettra à jour instantanément la liste des formateurs ainsi que l'ensemble des 7 modules techniques.

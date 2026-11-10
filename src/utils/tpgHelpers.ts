@@ -29,31 +29,17 @@ export function mailTo(recipient: string, subject: string, body: string, cc?: st
   const ccList = parseList(cc);
   const bccList = parseList(bcc);
 
-  // Vérifier et extraire systématiquement cadres.operationnels@tpg.ch de To et Cc
-  let cadresFound = false;
-
   const cleanRecList = recList.filter((email) => {
     if (email.toLowerCase().includes('cadres.operationnels')) {
-      cadresFound = true;
+      if (!ccList.some((e) => e.toLowerCase().includes('cadres.operationnels'))) {
+        ccList.push(email);
+      }
       return false;
     }
     return true;
   });
 
-  const cleanCcList = ccList.filter((email) => {
-    if (email.toLowerCase().includes('cadres.operationnels')) {
-      cadresFound = true;
-      return false;
-    }
-    return true;
-  });
-
-  // Si présent ou demandé, s'assurer qu'il est UNIQUEMENT en Cci (bcc)
-  if (cadresFound || bccList.some((e) => e.toLowerCase().includes('cadres.operationnels'))) {
-    if (!bccList.some((e) => e.toLowerCase() === CADRES_EMAIL.toLowerCase())) {
-      bccList.push(CADRES_EMAIL);
-    }
-  }
+  const cleanCcList = ccList;
 
   const queryParts: string[] = [];
   if (cleanCcList.length > 0) {
